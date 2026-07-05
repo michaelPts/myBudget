@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Budgetrechner</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="container">
+    <div class="kopfzeile">
+      <h1>
+        <span class="icon-wallet" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 7a2 2 0 0 1 2-2h9a1 1 0 0 1 1 1v2"/>
+            <rect x="3" y="8" width="18" height="11" rx="2"/>
+            <path d="M16 13.5h3"/>
+          </svg>
+        </span>
+        Budgetrechner
+      </h1>
+      <button type="button" id="modus-umschalten" class="btn btn-modus" title="Dunkelmodus umschalten">🌙</button>
+    </div>
+
+    <!-- ================= NAVIGATION ================= -->
+    <nav class="nav-leiste">
+      <a class="nav-link" href="index.html">Start</a>
+      <a class="nav-link" href="kategorien.html">Laufende Ausgaben</a>
+      <a class="nav-link" href="sonstige.html">Sonstige</a>
+    </nav>
+
+    <!-- ================= SALDO-KARTE ================= -->
+    <!-- Zeigt das Ergebnis (Einkommen minus ALLE Ausgaben aller Kategorien) an -->
+    <section class="karte saldo-karte" id="saldo-karte">
+      <p class="saldo-label">Dein Saldo</p>
+      <p class="saldo-betrag" id="saldo-anzeige">0,00 €</p>
+    </section>
+
+    <!-- ================= EINKOMMEN-KARTE ================= -->
+    <section class="karte">
+      <h2>Einkommen</h2>
+      <div class="feld-gruppe">
+        <label for="einkommen-input">Monatliches Einkommen</label>
+        <input
+          type="text"
+          id="einkommen-input"
+          placeholder="z. B. 2400"
+          inputmode="decimal"
+          autocomplete="off"
+        >
+        <p class="fehler-text" id="einkommen-fehler"></p>
+      </div>
+    </section>
+
+    <!-- ================= DIAGRAMM-KARTE ================= -->
+    <!-- Balkendiagramm ohne externe Bibliothek: ein Balken pro Kategorie mit
+         Ausgaben (plus "Sonstige"), größter Betrag links, kleinster rechts -->
+    <section class="karte diagramm-karte">
+      <h2>Ausgabenübersicht</h2>
+      <div class="diagramm-flaeche" id="diagramm-flaeche"></div>
+      <p class="leer-hinweis" id="diagramm-leer-hinweis">
+        Noch keine Ausgaben vorhanden. Lege welche unter „Laufende Ausgaben“
+        oder „Sonstige“ an, um hier eine Übersicht zu sehen.
+      </p>
+    </section>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

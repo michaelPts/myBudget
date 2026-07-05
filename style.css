@@ -1,0 +1,436 @@
+/* ===================================================
+   GRUNDEINSTELLUNGEN & FARBVARIABLEN
+   =================================================== */
+:root {
+  --farbe-hintergrund: #f2f4f8;
+  --farbe-karte: #ffffff;
+  --farbe-text: #1f2937;
+  --farbe-text-hell: #6b7280;
+  --farbe-primary: #4f46e5;
+  --farbe-primary-dunkel: #4338ca;
+  --farbe-positiv: #15803d;
+  --farbe-positiv-hintergrund: #dcfce7;
+  --farbe-negativ: #b91c1c;
+  --farbe-negativ-hintergrund: #fee2e2;
+  --farbe-fehler: #dc2626;
+  --farbe-rand: #e5e7eb;
+  --farbe-eingabe-bg: #fafafa;
+  --farbe-eingabe-bg-fokus: #ffffff;
+  --farbe-neutral-bg: #f3f4f6;
+  --schatten-farbe: rgba(0, 0, 0, 0.06);
+  --radius: 16px;
+}
+
+/* Dunkelmodus: überschreibt einfach dieselben Variablen mit anderen Werten.
+   Dadurch muss der Rest der CSS-Datei gar nicht angepasst werden. */
+body.dunkel-modus {
+  --farbe-hintergrund: #0f172a;
+  --farbe-karte: #1e293b;
+  --farbe-text: #f1f5f9;
+  --farbe-text-hell: #94a3b8;
+  --farbe-primary: #6366f1;
+  --farbe-primary-dunkel: #818cf8;
+  --farbe-positiv: #4ade80;
+  --farbe-positiv-hintergrund: #14532d;
+  --farbe-negativ: #f87171;
+  --farbe-negativ-hintergrund: #7f1d1d;
+  --farbe-fehler: #f87171;
+  --farbe-rand: #334155;
+  --farbe-eingabe-bg: #0f172a;
+  --farbe-eingabe-bg-fokus: #111827;
+  --farbe-neutral-bg: #334155;
+  --schatten-farbe: rgba(0, 0, 0, 0.4);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 24px 16px 60px;
+  font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  background: var(--farbe-hintergrund);
+  color: var(--farbe-text);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.kopfzeile {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.kopfzeile h1 {
+  margin: 0;
+}
+
+.btn-modus {
+  background: var(--farbe-karte);
+  border: 1px solid var(--farbe-rand);
+  font-size: 1.2rem;
+  line-height: 1;
+  padding: 8px 12px;
+  border-radius: 50%;
+}
+
+/* ===================================================
+   NAVIGATIONSLEISTE (auf allen 3 Seiten gleich)
+   =================================================== */
+.nav-leiste {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  overflow-x: auto;
+}
+
+.nav-link {
+  flex: 1 1 auto;
+  text-align: center;
+  white-space: nowrap;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--farbe-karte);
+  color: var(--farbe-text-hell);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  box-shadow: 0 1px 4px var(--schatten-farbe);
+}
+
+.nav-link.aktiv {
+  background: var(--farbe-primary);
+  color: #fff;
+}
+
+.container {
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+h1 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  text-align: center;
+  font-size: 1.8rem;
+  margin: 0;
+}
+
+/* Minimalistisches Wallet-Symbol in der Kopfzeile, ca. doppelt so groß wie
+   der vorherige Emoji-Text (1.8rem), Farbe folgt der Akzentfarbe der App. */
+.icon-wallet {
+  display: inline-flex;
+  flex-shrink: 0;
+  width: 3.6rem;
+  height: 3.6rem;
+  color: var(--farbe-primary);
+}
+
+.icon-wallet svg {
+  width: 100%;
+  height: 100%;
+}
+
+h2 {
+  font-size: 1.1rem;
+  margin: 0 0 16px;
+  color: var(--farbe-text);
+}
+
+/* ===================================================
+   KARTEN (allgemeines Container-Design)
+   =================================================== */
+.karte {
+  background: var(--farbe-karte);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 10px var(--schatten-farbe);
+}
+
+/* ===================================================
+   SALDO-KARTE
+   =================================================== */
+.saldo-karte {
+  text-align: center;
+  transition: background-color 0.2s ease;
+}
+
+.saldo-label {
+  margin: 0 0 8px;
+  font-size: 1rem;
+  color: var(--farbe-text-hell);
+}
+
+.saldo-betrag {
+  margin: 0;
+  font-size: 2.6rem;
+  font-weight: 700;
+}
+
+/* Farbige Zustände, werden per JavaScript per Klasse gesetzt */
+.saldo-karte.positiv .saldo-betrag {
+  color: var(--farbe-positiv);
+}
+.saldo-karte.positiv {
+  background: var(--farbe-positiv-hintergrund);
+}
+
+.saldo-karte.negativ .saldo-betrag {
+  color: var(--farbe-negativ);
+}
+.saldo-karte.negativ {
+  background: var(--farbe-negativ-hintergrund);
+}
+
+/* ===================================================
+   FORMULARE / EINGABEFELDER
+   =================================================== */
+.feld-gruppe {
+  margin-bottom: 16px;
+}
+
+.feld-gruppe:last-of-type {
+  margin-bottom: 20px;
+}
+
+label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--farbe-text-hell);
+}
+
+input[type="text"] {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 1rem;
+  border: 1px solid var(--farbe-rand);
+  border-radius: 10px;
+  background: var(--farbe-eingabe-bg);
+  color: var(--farbe-text);
+}
+
+input[type="text"]:focus {
+  outline: none;
+  border-color: var(--farbe-primary);
+  background: var(--farbe-eingabe-bg-fokus);
+}
+
+.fehler-text {
+  min-height: 1.1em;
+  margin: 6px 0 0;
+  font-size: 0.85rem;
+  color: var(--farbe-fehler);
+}
+
+/* ===================================================
+   BUTTONS
+   =================================================== */
+.btn {
+  cursor: pointer;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: opacity 0.15s ease;
+}
+
+.btn:hover {
+  opacity: 0.85;
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 14px;
+  font-size: 1rem;
+  background: var(--farbe-primary);
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: var(--farbe-primary-dunkel);
+  opacity: 1;
+}
+
+.btn-bearbeiten {
+  background: #e0e7ff;
+  color: var(--farbe-primary-dunkel);
+}
+
+.btn-loeschen {
+  background: var(--farbe-negativ-hintergrund);
+  color: var(--farbe-negativ);
+}
+
+.btn-speichern {
+  background: var(--farbe-positiv-hintergrund);
+  color: var(--farbe-positiv);
+}
+
+.btn-abbrechen {
+  background: var(--farbe-neutral-bg);
+  color: var(--farbe-text-hell);
+}
+
+/* ===================================================
+   AUSGABEN-LISTE
+   =================================================== */
+.ausgaben-liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ausgabe-eintrag {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--farbe-rand);
+}
+
+.ausgabe-eintrag:last-child {
+  border-bottom: none;
+}
+
+.ausgabe-name {
+  font-weight: 600;
+  flex: 1 1 auto;
+  min-width: 100px;
+}
+
+.ausgabe-betrag {
+  font-weight: 600;
+  color: var(--farbe-text-hell);
+  margin-right: 8px;
+}
+
+.ausgabe-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.leer-hinweis {
+  display: none; /* wird per JavaScript ein-/ausgeblendet */
+  text-align: center;
+  color: var(--farbe-text-hell);
+  padding: 20px 0;
+  margin: 0;
+}
+
+/* Bearbeiten-Modus eines Ausgaben-Eintrags */
+.ausgabe-bearbeiten {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  width: 100%;
+}
+
+.ausgabe-bearbeiten input[type="text"] {
+  flex: 1 1 120px;
+}
+
+.edit-fehler {
+  width: 100%;
+}
+
+/* ===================================================
+   KATEGORIE-KARTEN (kategorien.html & sonstige.html)
+   =================================================== */
+.kategorie-kopf {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.kategorie-kopf h2 {
+  margin: 0;
+}
+
+.kategorie-zwischensumme {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--farbe-text-hell);
+}
+
+.zwischensumme-betrag {
+  font-weight: 700;
+  color: var(--farbe-text);
+}
+
+/* ===================================================
+   BALKENDIAGRAMM (Startseite, ohne externe Bibliothek)
+   =================================================== */
+.diagramm-flaeche {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.balken-spalte {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1 1 64px;
+  min-width: 64px;
+}
+
+.balken-huelle {
+  display: flex;
+  align-items: flex-end;
+  height: 180px;
+  width: 100%;
+}
+
+.balken {
+  width: 100%;
+  min-height: 4px;
+  background: var(--farbe-primary);
+  border-radius: 8px 8px 0 0;
+  transition: height 0.3s ease;
+}
+
+.balken-wert {
+  margin-bottom: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.balken-label {
+  margin-top: 8px;
+  font-size: 0.8rem;
+  color: var(--farbe-text-hell);
+  text-align: center;
+}
+
+/* ===================================================
+   RESPONSIVE ANPASSUNGEN (größere Bildschirme)
+   =================================================== */
+@media (min-width: 600px) {
+  body {
+    padding: 40px 16px 60px;
+  }
+
+  .saldo-betrag {
+    font-size: 3.2rem;
+  }
+
+  .karte {
+    padding: 32px;
+  }
+}

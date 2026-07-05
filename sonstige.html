@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sonstige Ausgaben – Budgetrechner</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="container">
+    <div class="kopfzeile">
+      <h1>
+        <span class="icon-wallet" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 7a2 2 0 0 1 2-2h9a1 1 0 0 1 1 1v2"/>
+            <rect x="3" y="8" width="18" height="11" rx="2"/>
+            <path d="M16 13.5h3"/>
+          </svg>
+        </span>
+        Budgetrechner
+      </h1>
+      <button type="button" id="modus-umschalten" class="btn btn-modus" title="Dunkelmodus umschalten">🌙</button>
+    </div>
+
+    <!-- ================= NAVIGATION ================= -->
+    <nav class="nav-leiste">
+      <a class="nav-link" href="index.html">Start</a>
+      <a class="nav-link" href="kategorien.html">Laufende Ausgaben</a>
+      <a class="nav-link" href="sonstige.html">Sonstige</a>
+    </nav>
+
+    <!-- ================= SONSTIGE-AUSGABEN-KARTE ================= -->
+    <!-- Freie, eigene Ausgaben ohne feste Kategorie. script.js erkennt diese
+         Karte über "ausgaben-karte" + data-ziel="sonstige" genau wie die
+         Kategorie-Karten auf kategorien.html. -->
+    <section class="karte ausgaben-karte" data-ziel="sonstige">
+      <div class="kategorie-kopf">
+        <h2>Sonstige Ausgaben</h2>
+        <p class="kategorie-zwischensumme">Zwischensumme: <span class="zwischensumme-betrag">0,00 €</span></p>
+      </div>
+
+      <form class="ausgabe-formular" novalidate>
+        <div class="feld-gruppe">
+          <label for="sonstige-name-input">Name</label>
+          <input type="text" id="sonstige-name-input" class="ausgabe-name-input" placeholder="z. B. Geschenke" autocomplete="off">
+          <p class="fehler-text name-fehler"></p>
+        </div>
+        <div class="feld-gruppe">
+          <label for="sonstige-betrag-input">Betrag pro Monat</label>
+          <input type="text" id="sonstige-betrag-input" class="ausgabe-betrag-input" placeholder="z. B. 25" inputmode="decimal" autocomplete="off">
+          <p class="fehler-text betrag-fehler"></p>
+        </div>
+        <button type="submit" class="btn btn-primary">+ Ausgabe hinzufügen</button>
+      </form>
+
+      <ul class="ausgaben-liste"></ul>
+      <p class="leer-hinweis">Noch keine sonstigen Ausgaben angelegt.</p>
+    </section>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

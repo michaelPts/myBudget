@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Laufende Ausgaben – Budgetrechner</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <div class="container">
+    <div class="kopfzeile">
+      <h1>
+        <span class="icon-wallet" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 7a2 2 0 0 1 2-2h9a1 1 0 0 1 1 1v2"/>
+            <rect x="3" y="8" width="18" height="11" rx="2"/>
+            <path d="M16 13.5h3"/>
+          </svg>
+        </span>
+        Budgetrechner
+      </h1>
+      <button type="button" id="modus-umschalten" class="btn btn-modus" title="Dunkelmodus umschalten">🌙</button>
+    </div>
+
+    <!-- ================= NAVIGATION ================= -->
+    <nav class="nav-leiste">
+      <a class="nav-link" href="index.html">Start</a>
+      <a class="nav-link" href="kategorien.html">Laufende Ausgaben</a>
+      <a class="nav-link" href="sonstige.html">Sonstige</a>
+    </nav>
+
+    <!-- Jede Karte unten ist eine "Ausgaben-Karte": script.js erkennt sie über
+         die Klasse "ausgaben-karte" und das Attribut "data-ziel" und macht
+         Formular, Liste, Bearbeiten/Löschen und Zwischensumme automatisch
+         funktionsfähig – der Ablauf ist für alle 6 Kategorien identisch. -->
+
+    <!-- ================= WOHNEN ================= -->
+    <section class="karte ausgaben-karte" data-ziel="wohnen">
+      <div class="kategorie-kopf">
+        <h2>Wohnen</h2>
+        <p class="kategorie-zwischensumme">Zwischensumme: <span class="zwischensumme-betrag">0,00 €</span></p>
+      </div>
+
+      <form class="ausgabe-formular" novalidate>
+        <div class="feld-gruppe">
+          <label for="wohnen-name-input">Name</label>
+          <input type="text" id="wohnen-name-input" class="ausgabe-name-input" placeholder="z. B. Miete" autocomplete="off">
+          <p class="fehler-text name-fehler"></p>
+        </div>
+        <div class="feld-gruppe">
+          <label for="wohnen-betrag-input">Betrag pro Monat</label>
+          <input type="text" id="wohnen-betrag-input" class="ausgabe-betrag-input" placeholder="z. B. 800" inputmode="decimal" autocomplete="off">
+          <p class="fehler-text betrag-fehler"></p>
+        </div>
+        <button type="submit" class="btn btn-primary">+ Ausgabe hinzufügen</button>
+      </form>
+
+      <ul class="ausgaben-liste"></ul>
+      <p class="leer-hinweis">Noch keine Ausgaben in dieser Kategorie.</p>
+    </section>
+
+    <!-- ================= ENERGIE ================= -->
+    <section class="karte ausgaben-karte" data-ziel="energie">
+      <div class="kategorie-kopf">
+        <h2>Energie</h2>
+        <p class="kategorie-zwischensumme">Zwischensumme: <span class="zwischensumme-betrag">0,00 €</span></p>
+      </div>
+
+      <form class="ausgabe-formular" novalidate>
+        <div class="feld-gruppe">
+          <label for="energie-name-input">Name</label>
+          <input type="text" id="energie-name-input" class="ausgabe-name-input" placeholder="z. B. Strom" autocomplete="off">
+          <p class="fehler-text name-fehler"></p>
+        </div>
+        <div class="feld-gruppe">
+          <label for="energie-betrag-input">Betrag pro Monat</label>
+          <input type="text" id="energie-betrag-input" class="ausgabe-betrag-input" placeholder="z. B. 90" inputmode="decimal" autocomplete="off">
+          <p class="fehler-text betrag-fehler"></p>
+        </div>
+        <button type="submit" class="btn btn-primary">+ Ausgabe hinzufügen</button>
+      </form>
+
+      <ul class="ausgaben-liste"></ul>
+      <p class="leer-hinweis">Noch keine Ausgaben in dieser Kategorie.</p>
+    </section>
+
+    <!-- ================= ARBEIT ================= -->
+    <section class="karte ausgaben-karte" data-ziel="arbeit">
+      <div class="kategorie-kopf">
+        <h2>Arbeit</h2>
+        <p class="kategorie-zwischensumme">Zwischensumme: <span class="zwischensumme-betrag">0,00 €</span></p>
+      </div>
+
+      <form class="ausgabe-formular" novalidate>
+        <div class="feld-gruppe">
+          <label for="arbeit-name-input">Name</label>
+          <input type="text" id="arbeit-name-input" class="ausgabe-name-input" placeholder="z. B. Fahrtkosten" autocomplete="off">
+          <p class="fehler-text name-fehler"></p>
+        </div>
+        <div class="feld-gruppe">
+          <label for="arbeit-betrag-input">Betrag pro Monat</label>
+          <input type="text" id="arbeit-betrag-input" class="ausgabe-betrag-input" placeholder="z. B. 60" inputmode="decimal" autocomplete="off">
+          <p class="fehler-text betrag-fehler"></p>
+        </div>
+        <button type="submit" class="btn btn-primary">+ Ausgabe hinzufügen</button>
+      </form>
+
+      <ul class="ausgaben-liste"></ul>
+      <p class="leer-hinweis">Noch keine Ausgaben in dieser Kategorie.</p>
+    </section>
+
+    <!-- ================= LEBENSMITTEL ================= -->
+    <section class="karte ausgaben-karte" data-ziel="lebensmittel">
+      <div class="kategorie-kopf">
+        <h2>Lebensmittel</h2>
+        <p class="kategorie-zwischensumme">Zwischensumme: <span class="zwischensumme-betrag">0,00 €</span></p>
+      </div>
+
+      <form class="ausgabe-formular" novalidate>
+        <div class="feld-gruppe">
+          <label for="lebensmittel-name-input">Name</label>
+          <input type="text" id="lebensmittel-name-input" class="ausgabe-name-input" placeholder="z. B. Supermarkt" autocomplete="off">
+          <p class="fehler-text name-fehler"></p>
+        </div>
+        <div class="feld-gruppe">
+          <label for="lebensmittel-betrag-input">Betrag pro Monat</label>
+          <input type="text" id="lebensmittel-betrag-input" class="ausgabe-betrag-input" placeholder="z. B. 350" inputmode="decimal" autocomplete="off">
+          <p class="fehler-text betrag-fehler"></p>
+        </div>
+        <button type="submit" class="btn btn-primary">+ Ausgabe hinzufügen</button>
+      </form>
+
+      <ul class="ausgaben-liste"></ul>
+      <p class="leer-hinweis">Noch keine Ausgaben in dieser Kategorie.</p>
+    </section>
+
+    <!-- ================= KIND ================= -->
+    <section class="karte ausgaben-karte" data-ziel="kind">
+      <div class="kategorie-kopf">
+        <h2>Kind</h2>
+        <p class="kategorie-zwischensumme">Zwischensumme: <span class="zwischensumme-betrag">0,00 €</span></p>
+      </div>
+
+      <form class="ausgabe-formular" novalidate>
+        <div class="feld-gruppe">
+          <label for="kind-name-input">Name</label>
+          <input type="text" id="kind-name-input" class="ausgabe-name-input" placeholder="z. B. Kita" autocomplete="off">
+          <p class="fehler-text name-fehler"></p>
+        </div>
+        <div class="feld-gruppe">
+          <label for="kind-betrag-input">Betrag pro Monat</label>
+          <input type="text" id="kind-betrag-input" class="ausgabe-betrag-input" placeholder="z. B. 150" inputmode="decimal" autocomplete="off">
+          <p class="fehler-text betrag-fehler"></p>
+        </div>
+        <button type="submit" class="btn btn-primary">+ Ausgabe hinzufügen</button>
+      </form>
+
+      <ul class="ausgaben-liste"></ul>
+      <p class="leer-hinweis">Noch keine Ausgaben in dieser Kategorie.</p>
+    </section>
+
+    <!-- ================= MULTIMEDIA ================= -->
+    <section class="karte ausgaben-karte" data-ziel="multimedia">
+      <div class="kategorie-kopf">
+        <h2>Multimedia</h2>
+        <p class="kategorie-zwischensumme">Zwischensumme: <span class="zwischensumme-betrag">0,00 €</span></p>
+      </div>
+
+      <form class="ausgabe-formular" novalidate>
+        <div class="feld-gruppe">
+          <label for="multimedia-name-input">Name</label>
+          <input type="text" id="multimedia-name-input" class="ausgabe-name-input" placeholder="z. B. Streaming" autocomplete="off">
+          <p class="fehler-text name-fehler"></p>
+        </div>
+        <div class="feld-gruppe">
+          <label for="multimedia-betrag-input">Betrag pro Monat</label>
+          <input type="text" id="multimedia-betrag-input" class="ausgabe-betrag-input" placeholder="z. B. 12,99" inputmode="decimal" autocomplete="off">
+          <p class="fehler-text betrag-fehler"></p>
+        </div>
+        <button type="submit" class="btn btn-primary">+ Ausgabe hinzufügen</button>
+      </form>
+
+      <ul class="ausgaben-liste"></ul>
+      <p class="leer-hinweis">Noch keine Ausgaben in dieser Kategorie.</p>
+    </section>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
