@@ -22,8 +22,10 @@
 }
 
 /* Dunkelmodus: überschreibt einfach dieselben Variablen mit anderen Werten.
-   Dadurch muss der Rest der CSS-Datei gar nicht angepasst werden. */
-body.dunkel-modus {
+   Dadurch muss der Rest der CSS-Datei gar nicht angepasst werden.
+   Die Klasse sitzt am <html>-Element (nicht am <body>), damit ein Inline-
+   Skript im <head> sie schon vor dem ersten Rendern setzen kann. */
+html.dunkel-modus {
   --farbe-hintergrund: #0f172a;
   --farbe-karte: #1e293b;
   --farbe-text: #f1f5f9;
@@ -229,6 +231,42 @@ input[type="text"]:focus {
   color: var(--farbe-fehler);
 }
 
+.erfolg-text {
+  min-height: 1.1em;
+  margin: 6px 0 0;
+  font-size: 0.85rem;
+  color: var(--farbe-positiv);
+}
+
+.fehler-text:empty,
+.erfolg-text:empty {
+  margin: 0;
+}
+
+textarea {
+  width: 100%;
+  padding: 12px 14px;
+  font-size: 0.85rem;
+  font-family: "Consolas", "SFMono-Regular", Menlo, monospace;
+  border: 1px solid var(--farbe-rand);
+  border-radius: 10px;
+  background: var(--farbe-eingabe-bg);
+  color: var(--farbe-text);
+  resize: vertical;
+}
+
+textarea:focus {
+  outline: none;
+  border-color: var(--farbe-primary);
+  background: var(--farbe-eingabe-bg-fokus);
+}
+
+input[type="file"] {
+  width: 100%;
+  font-size: 0.85rem;
+  color: var(--farbe-text-hell);
+}
+
 /* ===================================================
    BUTTONS
    =================================================== */
@@ -277,6 +315,14 @@ input[type="text"]:focus {
 .btn-abbrechen {
   background: var(--farbe-neutral-bg);
   color: var(--farbe-text-hell);
+}
+
+.btn-warnung {
+  width: 100%;
+  padding: 14px;
+  font-size: 1rem;
+  background: var(--farbe-negativ-hintergrund);
+  color: var(--farbe-negativ);
 }
 
 /* ===================================================
@@ -368,6 +414,180 @@ input[type="text"]:focus {
 .zwischensumme-betrag {
   font-weight: 700;
   color: var(--farbe-text);
+}
+
+/* ===================================================
+   EXPORT / IMPORT (kategorien.html)
+   =================================================== */
+.hinweis-text {
+  margin: 0 0 16px;
+  font-size: 0.9rem;
+  color: var(--farbe-text-hell);
+}
+
+.export-import-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.export-import-buttons .btn {
+  flex: 1 1 180px;
+}
+
+.export-text-bereich {
+  margin-top: 16px;
+}
+
+.trenner {
+  border: none;
+  border-top: 1px solid var(--farbe-rand);
+  margin: 20px 0;
+}
+
+.oder-trenner {
+  text-align: center;
+  font-size: 0.85rem;
+  color: var(--farbe-text-hell);
+  margin: 4px 0 16px;
+}
+
+/* ===================================================
+   ÜBERSICHTSTABELLE (kategorien.html & sonstige.html)
+   =================================================== */
+.tabelle-wrapper {
+  /* Sicherheitsnetz gegen seitliches Überlaufen auf sehr schmalen Displays;
+     bei zwei schlanken Spalten sollte dies im Normalfall nie greifen. */
+  overflow-x: auto;
+}
+
+.uebersicht-tabelle {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.uebersicht-tabelle td,
+.uebersicht-tabelle th {
+  padding: 10px 4px;
+  text-align: left;
+  border-bottom: 1px solid var(--farbe-rand);
+}
+
+.uebersicht-tabelle td:last-child,
+.uebersicht-tabelle th:last-child {
+  text-align: right;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.uebersicht-gruppen-zeile th {
+  background: var(--farbe-neutral-bg);
+  font-weight: 700;
+  border-bottom: 1px solid var(--farbe-rand);
+}
+
+.uebersicht-gruppen-zeile:not(:first-child) th {
+  border-top: 2px solid var(--farbe-rand);
+}
+
+/* ===================================================
+   AUSGABEN GESAMT (Startseite, über dem Balkendiagramm)
+   =================================================== */
+.ausgaben-gesamt {
+  margin: -8px 0 20px;
+  font-size: 0.95rem;
+  color: var(--farbe-text-hell);
+}
+
+.ausgaben-gesamt span {
+  font-weight: 700;
+  color: var(--farbe-text);
+}
+
+/* ===================================================
+   HORIZONTALES BALKENDIAGRAMM (in jeder Kategorie-Karte)
+   =================================================== */
+.kategorie-balken {
+  display: none; /* wird per JavaScript ein-/ausgeblendet */
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.hbalken-zeile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hbalken-info {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.85rem;
+}
+
+.hbalken-label {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.hbalken-wert {
+  color: var(--farbe-text-hell);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.hbalken-huelle {
+  width: 100%;
+  height: 12px;
+  background: var(--farbe-neutral-bg);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.hbalken {
+  height: 100%;
+  min-width: 4px;
+  background: var(--farbe-primary);
+  border-radius: 6px;
+  transition: width 0.3s ease;
+}
+
+/* ===================================================
+   EIN-/AUSKLAPPBARER BEREICH (Formular + Liste) in jeder Ausgaben-Karte
+   Standardmäßig eingeklappt, damit die Kachel im Alltag kompakt bleibt.
+   =================================================== */
+.kategorie-umschalten {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--farbe-neutral-bg);
+  color: var(--farbe-text);
+  margin-bottom: 4px;
+}
+
+.umschalten-pfeil {
+  display: inline-block;
+  transition: transform 0.2s ease;
+}
+
+.kategorie-umschalten[aria-expanded="true"] .umschalten-pfeil {
+  transform: rotate(180deg);
+}
+
+.kategorie-details {
+  display: none;
+  margin-top: 16px;
+}
+
+.kategorie-details.offen {
+  display: block;
 }
 
 /* ===================================================

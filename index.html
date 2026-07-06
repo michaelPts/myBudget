@@ -2,6 +2,15 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
+  <script>
+    // Verhindert ein kurzes Aufblitzen des Hellmodus beim Laden/Seitenwechsel
+    // im Dunkelmodus: liest den gespeicherten Modus synchron VOR dem ersten
+    // Rendern aus und setzt die Klasse direkt am <html>-Element (das schon
+    // existiert, während <body> hier noch nicht geparst ist).
+    if (localStorage.getItem("budgetrechnerModus") === "dunkel") {
+      document.documentElement.classList.add("dunkel-modus");
+    }
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Budgetrechner</title>
   <link rel="stylesheet" href="style.css">
@@ -58,6 +67,7 @@
          Ausgaben (plus "Sonstige"), größter Betrag links, kleinster rechts -->
     <section class="karte diagramm-karte">
       <h2>Ausgabenübersicht</h2>
+      <p class="ausgaben-gesamt">Ausgaben gesamt: <span id="ausgaben-gesamt-betrag">0,00 €</span></p>
       <div class="diagramm-flaeche" id="diagramm-flaeche"></div>
       <p class="leer-hinweis" id="diagramm-leer-hinweis">
         Noch keine Ausgaben vorhanden. Lege welche unter „Laufende Ausgaben“

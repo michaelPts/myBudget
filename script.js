@@ -26,6 +26,7 @@ const KATEGORIEN = [
   { key: "lebensmittel", label: "Lebensmittel" },
   { key: "kind", label: "Kind" },
   { key: "multimedia", label: "Multimedia" },
+  { key: "versicherungen", label: "Versicherungen" },
 ];
 
 // "daten" ist unser zentraler Zustand (State). Alles, was die App anzeigt,
@@ -271,9 +272,14 @@ if (einkommenInput) {
 function rendereDiagramm() {
   const flaeche = document.getElementById("diagramm-flaeche");
   const leerHinweis = document.getElementById("diagramm-leer-hinweis");
+  const gesamtBetragEl = document.getElementById("ausgaben-gesamt-betrag");
 
   if (!flaeche) {
     return;
+  }
+
+  if (gesamtBetragEl) {
+    gesamtBetragEl.textContent = formatiereEuro(summeListe(alleAusgaben()));
   }
 
   const balkenDaten = KATEGORIEN.map((kategorie) => ({
@@ -319,6 +325,318 @@ function rendereDiagramm() {
 }
 
 /* =========================================================================
+   HORIZONTALES BALKENDIAGRAMM (in jeder Ausgaben-Karte)
+   Reines HTML/CSS: pro Ausgabe eine Zeile mit einem horizontalen Balken,
+   dessen Breite proportional zum größten Betrag der Kategorie ist. Größter
+   Betrag oben, kleinster unten. Wird bei leerer Liste ausgeblendet.
+   ========================================================================= */
+
+function rendereKategorieBalken(liste, container) {
+  if (!container) {
+    return;
+  }
+
+  container.innerHTML = "";
+
+  if (liste.length === 0) {
+    container.style.display = "none";
+    return;
+  }
+
+  container.style.display = "flex";
+
+  const sortiert = [...liste].sort((a, b) => b.betrag - a.betrag);
+  const maxWert = sortiert[0].betrag;
+
+  sortiert.forEach((ausgabe) => {
+    const breiteProzent = (ausgabe.betrag / maxWert) * 100;
+
+    const zeile = document.createElement("div");
+    zeile.className = "hbalken-zeile";
+    zeile.innerHTML = `
+      <div class="hbalken-info">
+        <span class="hbalken-label">${escapeHtml(ausgabe.name)}</span>
+        <span class="hbalken-wert">${formatiereEuro(ausgabe.betrag)}</span>
+      </div>
+      <div class="hbalken-huelle">
+        <div class="hbalken" style="width: ${breiteProzent}%"></div>
+      </div>
+    `;
+    container.appendChild(zeile);
+  });
+}
+
+/* =========================================================================
+   ÜBERSICHTSTABELLE (kategorien.html & sonstige.html)
+   Zeigt alle Ausgaben gruppiert nach Kategorie mit Zwischensumme an. Auf
+   kategorien.html werden alle festen Kategorien gruppiert, auf sonstige.html
+   nur die eine Gruppe "Sonstige Ausgaben". Kategorien ohne Ausgaben werden
+   nicht angezeigt.
+   ========================================================================= */
+
+function rendereUebersichtstabelle() {
+  const karte = document.querySelector(".uebersicht-karte[data-tabelle-modus]");
+
+  if (!karte) {
+    return;
+  }
+
+  const modus = karte.dataset.tabelleModus;
+  const wrapper = karte.querySelector(".tabelle-wrapper");
+  const body = karte.querySelector(".uebersicht-tabelle-body");
+  const leerHinweis = karte.querySelector(".leer-hinweis");
+
+  const gruppen = modus === "sonstige"
+    ? [{ label: "Sonstige Ausgaben", liste: daten.sonstige }]
+    : KATEGORIEN.map((kategorie) => ({ label: kategorie.label, liste: daten.kategorien[kategorie.key] }));
+
+  const sichtbareGruppen = gruppen.filter((gruppe) => gruppe.liste.length > 0);
+
+  body.innerHTML = "";
+
+  if (sichtbareGruppen.length === 0) {
+    wrapper.style.display = "none";
+    if (leerHinweis) {
+      leerHinweis.style.display = "block";
+    }
+    return;
+  }
+
+  wrapper.style.display = "block";
+  if (leerHinweis) {
+    leerHinweis.style.display = "none";
+  }
+
+  sichtbareGruppen.forEach((gruppe) => {
+    const kopfZeile = document.createElement("tr");
+    kopfZeile.className = "uebersicht-gruppen-zeile";
+    kopfZeile.innerHTML = `
+      <th scope="col">${escapeHtml(gruppe.label)}</th>
+      <th scope="col">${formatiereEuro(summeListe(gruppe.liste))}</th>
+    `;
+    body.appendChild(kopfZeile);
+
+    gruppe.liste.forEach((ausgabe) => {
+      const zeile = document.createElement("tr");
+      zeile.innerHTML = `
+        <td>${escapeHtml(ausgabe.name)}</td>
+        <td>${formatiereEuro(ausgabe.betrag)}</td>
+      `;
+      body.appendChild(zeile);
+    });
+  });
+}
+
+/* =========================================================================
+   EXPORT / IMPORT – Laufende Ausgaben (kategorien.html)
+   Reiner Text-/Datei-Austausch ohne Server oder Konto, funktioniert
+   identisch auf Android und iOS: Export als Datei-Download ODER als Text
+   zum Kopieren (falls der Datei-Download im jeweiligen Browser/Kontext
+   nicht verfügbar ist, z. B. bei manchen file://-Aufrufen). Der Import
+   ERSETZT alle laufenden Ausgaben (alle 7 Kategorien) auf diesem Gerät.
+   IDs werden bewusst nicht mit exportiert/übernommen, da auf dem Zielgerät
+   eigene, kollisionsfreie IDs vergeben werden müssen.
+   ========================================================================= */
+
+const EXPORT_TYP = "budgetrechner-laufende-ausgaben";
+
+// Baut die Export-Datenstruktur aus dem aktuellen Zustand.
+function erzeugeExportDaten() {
+  const kategorienExport = {};
+
+  KATEGORIEN.forEach((kategorie) => {
+    kategorienExport[kategorie.key] = daten.kategorien[kategorie.key].map((ausgabe) => ({
+      name: ausgabe.name,
+      betrag: ausgabe.betrag,
+    }));
+  });
+
+  return {
+    typ: EXPORT_TYP,
+    version: 1,
+    exportiertAm: new Date().toISOString(),
+    kategorien: kategorienExport,
+  };
+}
+
+// Erzeugt einen Dateinamen-Zeitstempel im Format JJJJ-MM-TT.
+function erzeugeDateistempel() {
+  const jetzt = new Date();
+  const zweistellig = (zahl) => String(zahl).padStart(2, "0");
+  return `${jetzt.getFullYear()}-${zweistellig(jetzt.getMonth() + 1)}-${zweistellig(jetzt.getDate())}`;
+}
+
+// Prüft importierte Rohdaten und ERSETZT alle laufenden Ausgaben (alle 7
+// Kategorien) auf diesem Gerät. Ungültige Einzel-Einträge werden übersprungen.
+// Wirft einen Error mit verständlicher Meldung, wenn das Format nicht passt.
+// Gibt die Anzahl der übernommenen Ausgaben zurück.
+function importiereLaufendeAusgaben(rohdaten) {
+  if (!rohdaten || typeof rohdaten !== "object" || typeof rohdaten.kategorien !== "object") {
+    throw new Error("Das ist keine gültige Export-Datei für laufende Ausgaben.");
+  }
+
+  const neueKategorien = leereKategorien();
+  let anzahlUebernommen = 0;
+
+  KATEGORIEN.forEach((kategorie) => {
+    const eintraege = rohdaten.kategorien[kategorie.key];
+
+    if (!Array.isArray(eintraege)) {
+      return;
+    }
+
+    eintraege.forEach((eintrag) => {
+      const name = eintrag && typeof eintrag.name === "string" ? eintrag.name.trim() : "";
+      const betrag = eintrag ? Number(eintrag.betrag) : NaN;
+
+      if (name === "" || !isFinite(betrag) || betrag <= 0) {
+        return;
+      }
+
+      neueKategorien[kategorie.key].push({ id: ermittleNeueId(), name, betrag });
+      anzahlUebernommen += 1;
+    });
+  });
+
+  daten.kategorien = neueKategorien;
+  speichereDaten();
+
+  return anzahlUebernommen;
+}
+
+// Kopiert Text in die Zwischenablage, mit Fallback für Browser/Kontexte ohne
+// Clipboard-API (z. B. beim direkten Öffnen der Seite über file:// auf iOS).
+function kopiereTextInZwischenablage(text, textareaElement) {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    return navigator.clipboard.writeText(text);
+  }
+
+  return new Promise((resolve, reject) => {
+    textareaElement.focus();
+    textareaElement.select();
+    const erfolgreich = document.execCommand("copy");
+    if (erfolgreich) {
+      resolve();
+    } else {
+      reject(new Error("Kopieren nicht möglich"));
+    }
+  });
+}
+
+// Verbindet die Export/Import-Karte auf kategorien.html mit den Funktionen
+// oben. Tut nichts, falls die Karte auf der aktuellen Seite nicht existiert.
+function initialisiereExportImport() {
+  const exportDateiButton = document.getElementById("export-datei-button");
+
+  if (!exportDateiButton) {
+    return;
+  }
+
+  const exportTextButton = document.getElementById("export-text-button");
+  const exportTextBereich = document.getElementById("export-text-bereich");
+  const exportTextFeld = document.getElementById("export-text-feld");
+  const exportKopierenButton = document.getElementById("export-kopieren-button");
+  const exportKopierenErfolg = document.getElementById("export-kopieren-erfolg");
+  const exportKopierenFehler = document.getElementById("export-kopieren-fehler");
+  const importDateiInput = document.getElementById("import-datei-input");
+  const importTextFeld = document.getElementById("import-text-feld");
+  const importTextButton = document.getElementById("import-text-button");
+  const importErfolg = document.getElementById("import-erfolg");
+  const importFehler = document.getElementById("import-fehler");
+
+  exportDateiButton.addEventListener("click", () => {
+    const text = JSON.stringify(erzeugeExportDaten(), null, 2);
+    const blob = new Blob([text], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `laufende-ausgaben-${erzeugeDateistempel()}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    // Object-URL erst zeitversetzt freigeben, damit der Download sicher startet.
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  });
+
+  exportTextButton.addEventListener("click", () => {
+    const wirdEingeblendet = exportTextBereich.hidden;
+    if (wirdEingeblendet) {
+      exportTextFeld.value = JSON.stringify(erzeugeExportDaten(), null, 2);
+      exportKopierenErfolg.textContent = "";
+      exportKopierenFehler.textContent = "";
+    }
+    exportTextBereich.hidden = !wirdEingeblendet;
+  });
+
+  exportKopierenButton.addEventListener("click", () => {
+    kopiereTextInZwischenablage(exportTextFeld.value, exportTextFeld)
+      .then(() => {
+        exportKopierenErfolg.textContent = "In die Zwischenablage kopiert.";
+        exportKopierenFehler.textContent = "";
+      })
+      .catch(() => {
+        exportKopierenFehler.textContent = "Kopieren nicht möglich – bitte Text oben manuell markieren und kopieren.";
+        exportKopierenErfolg.textContent = "";
+      });
+  });
+
+  // Führt den Import anhand eines rohen JSON-Textes aus: parsen, per
+  // Rückfrage bestätigen lassen (da alle laufenden Ausgaben ersetzt werden)
+  // und anschließend übernehmen.
+  function fuehreImportAus(rohtext) {
+    importErfolg.textContent = "";
+    importFehler.textContent = "";
+
+    let rohdaten;
+    try {
+      rohdaten = JSON.parse(rohtext);
+    } catch (fehler) {
+      importFehler.textContent = "Der Text/die Datei enthält kein gültiges JSON.";
+      return;
+    }
+
+    const bestaetigt = confirm(
+      "Alle laufenden Ausgaben auf diesem Gerät werden durch die importierten Daten ersetzt. Fortfahren?"
+    );
+    if (!bestaetigt) {
+      return;
+    }
+
+    try {
+      const anzahl = importiereLaufendeAusgaben(rohdaten);
+      importErfolg.textContent = `${anzahl} Ausgabe(n) erfolgreich importiert. Seite wird neu geladen …`;
+      setTimeout(() => location.reload(), 1200);
+    } catch (fehler) {
+      importFehler.textContent = fehler.message;
+    }
+  }
+
+  importDateiInput.addEventListener("change", () => {
+    const datei = importDateiInput.files[0];
+    if (!datei) {
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = () => {
+      fuehreImportAus(String(reader.result));
+      importDateiInput.value = "";
+    };
+    reader.onerror = () => {
+      importFehler.textContent = "Datei konnte nicht gelesen werden.";
+      importDateiInput.value = "";
+    };
+    reader.readAsText(datei);
+  });
+
+  importTextButton.addEventListener("click", () => {
+    fuehreImportAus(importTextFeld.value);
+  });
+}
+
+/* =========================================================================
    AUSGABEN-KARTEN (kategorien.html & sonstige.html)
    Eine "Ausgaben-Karte" ist ein Kartenblock mit data-ziel (Kategorie-Key oder
    "sonstige"), eigenem Formular, eigener Liste und optionaler Zwischensumme.
@@ -343,6 +661,7 @@ function initialisiereAusgabenKarte(karte) {
   const liste = karte.querySelector(".ausgaben-liste");
   const leerHinweis = karte.querySelector(".leer-hinweis");
   const zwischensummeEl = karte.querySelector(".zwischensumme-betrag");
+  const balkenContainer = karte.querySelector(".kategorie-balken");
 
   // Zeichnet die Liste dieser einen Karte neu, je nach Zustand von
   // "holeListe(ziel)" und "bearbeitenZiel"/"bearbeitenId".
@@ -355,6 +674,8 @@ function initialisiereAusgabenKarte(karte) {
     if (zwischensummeEl) {
       zwischensummeEl.textContent = formatiereEuro(summeListe(eintraege));
     }
+
+    rendereKategorieBalken(eintraege, balkenContainer);
 
     eintraege.forEach((ausgabe) => {
       const eintrag = document.createElement("li");
@@ -426,6 +747,7 @@ function initialisiereAusgabenKarte(karte) {
     rendereKarte();
     rendereSaldo();
     rendereDiagramm();
+    rendereUebersichtstabelle();
 
     // Formular für die nächste Eingabe zurücksetzen
     nameInput.value = "";
@@ -463,6 +785,35 @@ function initialisiereAusgabenKarte(karte) {
   rendereKarte();
 }
 
+/* =========================================================================
+   EIN-/AUSKLAPPBARE BEREICHE (Kategorie-Karten & Übersichtstabellen)
+   Jeder Umschalt-Button (".kategorie-umschalten") steuert den direkt
+   folgenden Bereich (".kategorie-details"). Generisch für Kacheln UND die
+   Übersichtstabellen, damit dieselbe Klick-Logik nur einmal existiert.
+   ========================================================================= */
+
+function initialisiereAusklappBereiche() {
+  document.querySelectorAll(".kategorie-umschalten").forEach((button) => {
+    const bereich = button.nextElementSibling;
+
+    if (!bereich || !bereich.classList.contains("kategorie-details")) {
+      return;
+    }
+
+    const textEl = button.querySelector(".umschalten-text");
+    const labelZu = button.dataset.labelZu || (textEl ? textEl.textContent : "");
+    const labelOffen = button.dataset.labelOffen || labelZu;
+
+    button.addEventListener("click", () => {
+      const istOffen = bereich.classList.toggle("offen");
+      button.setAttribute("aria-expanded", String(istOffen));
+      if (textEl) {
+        textEl.textContent = istOffen ? labelOffen : labelZu;
+      }
+    });
+  });
+}
+
 // Löscht eine Ausgabe aus dem angegebenen Ziel, aber erst nach kurzer Rückfrage.
 function loescheAusgabe(ziel, id, rendereKarte) {
   const ausgabe = holeListe(ziel).find((a) => a.id === id);
@@ -485,6 +836,7 @@ function loescheAusgabe(ziel, id, rendereKarte) {
   rendereKarte();
   rendereSaldo();
   rendereDiagramm();
+  rendereUebersichtstabelle();
 }
 
 // Liest die Eingabefelder im Bearbeiten-Modus aus, prüft sie und speichert die Änderung.
@@ -521,6 +873,7 @@ function speichereBearbeiteteAusgabe(ziel, id, eintragElement, rendereKarte) {
   rendereKarte();
   rendereSaldo();
   rendereDiagramm();
+  rendereUebersichtstabelle();
 }
 
 /* =========================================================================
@@ -545,10 +898,14 @@ function markiereAktiveNavigation() {
 
 const modusButton = document.getElementById("modus-umschalten");
 
-// Schaltet die CSS-Klasse "dunkel-modus" am <body> um und passt das Icon an.
+// Schaltet die CSS-Klasse "dunkel-modus" am <html>-Element um und passt das
+// Icon an. Die Klasse wird bewusst am <html>-Element (nicht am <body>)
+// gesetzt, weil ein kleines Inline-Skript im <head> genau diese Klasse schon
+// vor dem ersten Rendern setzt (siehe Kommentar dort) – das verhindert ein
+// kurzes Aufblitzen des Hellmodus beim Seitenwechsel im Dunkelmodus.
 function wendeModusAn(modus) {
   const istDunkel = modus === "dunkel";
-  document.body.classList.toggle("dunkel-modus", istDunkel);
+  document.documentElement.classList.toggle("dunkel-modus", istDunkel);
   if (modusButton) {
     modusButton.textContent = istDunkel ? "☀️" : "🌙";
   }
@@ -556,7 +913,7 @@ function wendeModusAn(modus) {
 
 if (modusButton) {
   modusButton.addEventListener("click", () => {
-    const istAktuellDunkel = document.body.classList.contains("dunkel-modus");
+    const istAktuellDunkel = document.documentElement.classList.contains("dunkel-modus");
     const neuerModus = istAktuellDunkel ? "hell" : "dunkel";
     wendeModusAn(neuerModus);
     localStorage.setItem(MODUS_SCHLUESSEL, neuerModus);
@@ -578,8 +935,11 @@ function initialisiere() {
   wendeModusAn(localStorage.getItem(MODUS_SCHLUESSEL) || "hell");
   markiereAktiveNavigation();
   initialisiereAusgabenKarten();
+  initialisiereAusklappBereiche();
+  initialisiereExportImport();
   rendereSaldo();
   rendereDiagramm();
+  rendereUebersichtstabelle();
 }
 
 initialisiere();

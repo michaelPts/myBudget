@@ -2,6 +2,15 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
+  <script>
+    // Verhindert ein kurzes Aufblitzen des Hellmodus beim Laden/Seitenwechsel
+    // im Dunkelmodus: liest den gespeicherten Modus synchron VOR dem ersten
+    // Rendern aus und setzt die Klasse direkt am <html>-Element (das schon
+    // existiert, während <body> hier noch nicht geparst ist).
+    if (localStorage.getItem("budgetrechnerModus") === "dunkel") {
+      document.documentElement.classList.add("dunkel-modus");
+    }
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Laufende Ausgaben – Budgetrechner</title>
   <link rel="stylesheet" href="style.css">
@@ -30,10 +39,32 @@
       <a class="nav-link" href="sonstige.html">Sonstige</a>
     </nav>
 
+    <!-- ================= ÜBERSICHTSTABELLE ================= -->
+    <!-- Zeigt alle laufenden Ausgaben gruppiert nach Kategorie mit Zwischensumme.
+         Wird von script.js (rendereUebersichtstabelle) automatisch befüllt;
+         Kategorien ohne Ausgaben tauchen hier nicht auf. -->
+    <section class="karte uebersicht-karte" data-tabelle-modus="kategorien">
+      <h2>Übersicht: Laufende Ausgaben</h2>
+
+      <button type="button" class="btn kategorie-umschalten" aria-expanded="false" data-label-zu="Tabelle anzeigen" data-label-offen="Tabelle einklappen">
+        <span class="umschalten-text">Tabelle anzeigen</span>
+        <span class="umschalten-pfeil" aria-hidden="true">▾</span>
+      </button>
+
+      <div class="kategorie-details">
+      <div class="tabelle-wrapper">
+        <table class="uebersicht-tabelle">
+          <tbody class="uebersicht-tabelle-body"></tbody>
+        </table>
+      </div>
+      <p class="leer-hinweis">Noch keine laufenden Ausgaben vorhanden.</p>
+      </div>
+    </section>
+
     <!-- Jede Karte unten ist eine "Ausgaben-Karte": script.js erkennt sie über
          die Klasse "ausgaben-karte" und das Attribut "data-ziel" und macht
          Formular, Liste, Bearbeiten/Löschen und Zwischensumme automatisch
-         funktionsfähig – der Ablauf ist für alle 6 Kategorien identisch. -->
+         funktionsfähig – der Ablauf ist für alle 7 Kategorien identisch. -->
 
     <!-- ================= WOHNEN ================= -->
     <section class="karte ausgaben-karte" data-ziel="wohnen">
@@ -42,6 +73,20 @@
         <p class="kategorie-zwischensumme">Zwischensumme: <span class="zwischensumme-betrag">0,00 €</span></p>
       </div>
 
+      <!-- Horizontales Balkendiagramm dieser Kategorie, größte Ausgabe oben.
+           Wird von script.js (rendereKategorieBalken) befüllt und bei leerer
+           Kategorie automatisch ausgeblendet. -->
+      <div class="kategorie-balken"></div>
+
+      <!-- Ein-/Ausklapp-Button: Formular und Liste sind standardmäßig
+           eingeklappt, damit die Kachel kompakt bleibt. script.js schaltet
+           dazu die Klasse "offen" am darunterliegenden Bereich um. -->
+      <button type="button" class="btn kategorie-umschalten" aria-expanded="false" data-label-zu="Ausgaben bearbeiten" data-label-offen="Ausgaben einklappen">
+        <span class="umschalten-text">Ausgaben bearbeiten</span>
+        <span class="umschalten-pfeil" aria-hidden="true">▾</span>
+      </button>
+
+      <div class="kategorie-details">
       <form class="ausgabe-formular" novalidate>
         <div class="feld-gruppe">
           <label for="wohnen-name-input">Name</label>
@@ -58,6 +103,7 @@
 
       <ul class="ausgaben-liste"></ul>
       <p class="leer-hinweis">Noch keine Ausgaben in dieser Kategorie.</p>
+      </div>
     </section>
 
     <!-- ================= ENERGIE ================= -->
@@ -67,6 +113,20 @@
         <p class="kategorie-zwischensumme">Zwischensumme: <span class="zwischensumme-betrag">0,00 €</span></p>
       </div>
 
+      <!-- Horizontales Balkendiagramm dieser Kategorie, größte Ausgabe oben.
+           Wird von script.js (rendereKategorieBalken) befüllt und bei leerer
+           Kategorie automatisch ausgeblendet. -->
+      <div class="kategorie-balken"></div>
+
+      <!-- Ein-/Ausklapp-Button: Formular und Liste sind standardmäßig
+           eingeklappt, damit die Kachel kompakt bleibt. script.js schaltet
+           dazu die Klasse "offen" am darunterliegenden Bereich um. -->
+      <button type="button" class="btn kategorie-umschalten" aria-expanded="false" data-label-zu="Ausgaben bearbeiten" data-label-offen="Ausgaben einklappen">
+        <span class="umschalten-text">Ausgaben bearbeiten</span>
+        <span class="umschalten-pfeil" aria-hidden="true">▾</span>
+      </button>
+
+      <div class="kategorie-details">
       <form class="ausgabe-formular" novalidate>
         <div class="feld-gruppe">
           <label for="energie-name-input">Name</label>
@@ -83,6 +143,7 @@
 
       <ul class="ausgaben-liste"></ul>
       <p class="leer-hinweis">Noch keine Ausgaben in dieser Kategorie.</p>
+      </div>
     </section>
 
     <!-- ================= ARBEIT ================= -->
@@ -92,6 +153,20 @@
         <p class="kategorie-zwischensumme">Zwischensumme: <span class="zwischensumme-betrag">0,00 €</span></p>
       </div>
 
+      <!-- Horizontales Balkendiagramm dieser Kategorie, größte Ausgabe oben.
+           Wird von script.js (rendereKategorieBalken) befüllt und bei leerer
+           Kategorie automatisch ausgeblendet. -->
+      <div class="kategorie-balken"></div>
+
+      <!-- Ein-/Ausklapp-Button: Formular und Liste sind standardmäßig
+           eingeklappt, damit die Kachel kompakt bleibt. script.js schaltet
+           dazu die Klasse "offen" am darunterliegenden Bereich um. -->
+      <button type="button" class="btn kategorie-umschalten" aria-expanded="false" data-label-zu="Ausgaben bearbeiten" data-label-offen="Ausgaben einklappen">
+        <span class="umschalten-text">Ausgaben bearbeiten</span>
+        <span class="umschalten-pfeil" aria-hidden="true">▾</span>
+      </button>
+
+      <div class="kategorie-details">
       <form class="ausgabe-formular" novalidate>
         <div class="feld-gruppe">
           <label for="arbeit-name-input">Name</label>
@@ -108,6 +183,7 @@
 
       <ul class="ausgaben-liste"></ul>
       <p class="leer-hinweis">Noch keine Ausgaben in dieser Kategorie.</p>
+      </div>
     </section>
 
     <!-- ================= LEBENSMITTEL ================= -->
@@ -117,6 +193,20 @@
         <p class="kategorie-zwischensumme">Zwischensumme: <span class="zwischensumme-betrag">0,00 €</span></p>
       </div>
 
+      <!-- Horizontales Balkendiagramm dieser Kategorie, größte Ausgabe oben.
+           Wird von script.js (rendereKategorieBalken) befüllt und bei leerer
+           Kategorie automatisch ausgeblendet. -->
+      <div class="kategorie-balken"></div>
+
+      <!-- Ein-/Ausklapp-Button: Formular und Liste sind standardmäßig
+           eingeklappt, damit die Kachel kompakt bleibt. script.js schaltet
+           dazu die Klasse "offen" am darunterliegenden Bereich um. -->
+      <button type="button" class="btn kategorie-umschalten" aria-expanded="false" data-label-zu="Ausgaben bearbeiten" data-label-offen="Ausgaben einklappen">
+        <span class="umschalten-text">Ausgaben bearbeiten</span>
+        <span class="umschalten-pfeil" aria-hidden="true">▾</span>
+      </button>
+
+      <div class="kategorie-details">
       <form class="ausgabe-formular" novalidate>
         <div class="feld-gruppe">
           <label for="lebensmittel-name-input">Name</label>
@@ -133,6 +223,7 @@
 
       <ul class="ausgaben-liste"></ul>
       <p class="leer-hinweis">Noch keine Ausgaben in dieser Kategorie.</p>
+      </div>
     </section>
 
     <!-- ================= KIND ================= -->
@@ -142,6 +233,20 @@
         <p class="kategorie-zwischensumme">Zwischensumme: <span class="zwischensumme-betrag">0,00 €</span></p>
       </div>
 
+      <!-- Horizontales Balkendiagramm dieser Kategorie, größte Ausgabe oben.
+           Wird von script.js (rendereKategorieBalken) befüllt und bei leerer
+           Kategorie automatisch ausgeblendet. -->
+      <div class="kategorie-balken"></div>
+
+      <!-- Ein-/Ausklapp-Button: Formular und Liste sind standardmäßig
+           eingeklappt, damit die Kachel kompakt bleibt. script.js schaltet
+           dazu die Klasse "offen" am darunterliegenden Bereich um. -->
+      <button type="button" class="btn kategorie-umschalten" aria-expanded="false" data-label-zu="Ausgaben bearbeiten" data-label-offen="Ausgaben einklappen">
+        <span class="umschalten-text">Ausgaben bearbeiten</span>
+        <span class="umschalten-pfeil" aria-hidden="true">▾</span>
+      </button>
+
+      <div class="kategorie-details">
       <form class="ausgabe-formular" novalidate>
         <div class="feld-gruppe">
           <label for="kind-name-input">Name</label>
@@ -158,6 +263,7 @@
 
       <ul class="ausgaben-liste"></ul>
       <p class="leer-hinweis">Noch keine Ausgaben in dieser Kategorie.</p>
+      </div>
     </section>
 
     <!-- ================= MULTIMEDIA ================= -->
@@ -167,6 +273,20 @@
         <p class="kategorie-zwischensumme">Zwischensumme: <span class="zwischensumme-betrag">0,00 €</span></p>
       </div>
 
+      <!-- Horizontales Balkendiagramm dieser Kategorie, größte Ausgabe oben.
+           Wird von script.js (rendereKategorieBalken) befüllt und bei leerer
+           Kategorie automatisch ausgeblendet. -->
+      <div class="kategorie-balken"></div>
+
+      <!-- Ein-/Ausklapp-Button: Formular und Liste sind standardmäßig
+           eingeklappt, damit die Kachel kompakt bleibt. script.js schaltet
+           dazu die Klasse "offen" am darunterliegenden Bereich um. -->
+      <button type="button" class="btn kategorie-umschalten" aria-expanded="false" data-label-zu="Ausgaben bearbeiten" data-label-offen="Ausgaben einklappen">
+        <span class="umschalten-text">Ausgaben bearbeiten</span>
+        <span class="umschalten-pfeil" aria-hidden="true">▾</span>
+      </button>
+
+      <div class="kategorie-details">
       <form class="ausgabe-formular" novalidate>
         <div class="feld-gruppe">
           <label for="multimedia-name-input">Name</label>
@@ -183,6 +303,97 @@
 
       <ul class="ausgaben-liste"></ul>
       <p class="leer-hinweis">Noch keine Ausgaben in dieser Kategorie.</p>
+      </div>
+    </section>
+
+    <!-- ================= VERSICHERUNGEN ================= -->
+    <section class="karte ausgaben-karte" data-ziel="versicherungen">
+      <div class="kategorie-kopf">
+        <h2>Versicherungen</h2>
+        <p class="kategorie-zwischensumme">Zwischensumme: <span class="zwischensumme-betrag">0,00 €</span></p>
+      </div>
+
+      <!-- Horizontales Balkendiagramm dieser Kategorie, größte Ausgabe oben.
+           Wird von script.js (rendereKategorieBalken) befüllt und bei leerer
+           Kategorie automatisch ausgeblendet. -->
+      <div class="kategorie-balken"></div>
+
+      <!-- Ein-/Ausklapp-Button: Formular und Liste sind standardmäßig
+           eingeklappt, damit die Kachel kompakt bleibt. script.js schaltet
+           dazu die Klasse "offen" am darunterliegenden Bereich um. -->
+      <button type="button" class="btn kategorie-umschalten" aria-expanded="false" data-label-zu="Ausgaben bearbeiten" data-label-offen="Ausgaben einklappen">
+        <span class="umschalten-text">Ausgaben bearbeiten</span>
+        <span class="umschalten-pfeil" aria-hidden="true">▾</span>
+      </button>
+
+      <div class="kategorie-details">
+      <form class="ausgabe-formular" novalidate>
+        <div class="feld-gruppe">
+          <label for="versicherungen-name-input">Name</label>
+          <input type="text" id="versicherungen-name-input" class="ausgabe-name-input" placeholder="z. B. Haftpflicht" autocomplete="off">
+          <p class="fehler-text name-fehler"></p>
+        </div>
+        <div class="feld-gruppe">
+          <label for="versicherungen-betrag-input">Betrag pro Monat</label>
+          <input type="text" id="versicherungen-betrag-input" class="ausgabe-betrag-input" placeholder="z. B. 4,90" inputmode="decimal" autocomplete="off">
+          <p class="fehler-text betrag-fehler"></p>
+        </div>
+        <button type="submit" class="btn btn-primary">+ Ausgabe hinzufügen</button>
+      </form>
+
+      <ul class="ausgaben-liste"></ul>
+      <p class="leer-hinweis">Noch keine Ausgaben in dieser Kategorie.</p>
+      </div>
+    </section>
+
+    <!-- ================= EXPORT / IMPORT ================= -->
+    <!-- Überträgt ausschließlich die laufenden Ausgaben (alle Kategorien
+         dieser Seite) zwischen Geräten – z. B. um sie auf einem Handy mit
+         eigener Browser-Session wieder einzuspielen. Funktioniert ohne
+         Server/Konto: entweder als Datei-Download/-Auswahl oder per Text
+         kopieren/einfügen, falls der Datei-Download im Browser nicht
+         verfügbar ist. Der Import ERSETZT alle laufenden Ausgaben auf
+         diesem Gerät vollständig. -->
+    <section class="karte" id="export-import-karte">
+      <h2>Laufende Ausgaben übertragen</h2>
+      <p class="hinweis-text">
+        Exportiere deine laufenden Ausgaben, um sie auf einem anderen Gerät
+        (z. B. Handy mit eigener Session) zu importieren. Der Import ersetzt
+        alle laufenden Ausgaben auf dem Zielgerät vollständig.
+      </p>
+
+      <div class="export-import-buttons">
+        <button type="button" class="btn btn-primary" id="export-datei-button">Als Datei exportieren</button>
+        <button type="button" class="btn btn-bearbeiten" id="export-text-button">Als Text anzeigen</button>
+      </div>
+
+      <div class="export-text-bereich" id="export-text-bereich" hidden>
+        <div class="feld-gruppe">
+          <label for="export-text-feld">Exportierter Text (kopieren und z. B. per Mail/Nachricht an das andere Gerät senden)</label>
+          <textarea id="export-text-feld" readonly rows="6"></textarea>
+        </div>
+        <button type="button" class="btn btn-speichern" id="export-kopieren-button">In Zwischenablage kopieren</button>
+        <p class="erfolg-text" id="export-kopieren-erfolg"></p>
+        <p class="fehler-text" id="export-kopieren-fehler"></p>
+      </div>
+
+      <hr class="trenner">
+
+      <div class="feld-gruppe">
+        <label for="import-datei-input">Datei auswählen</label>
+        <input type="file" id="import-datei-input" accept="application/json,.json">
+      </div>
+
+      <p class="oder-trenner">oder</p>
+
+      <div class="feld-gruppe">
+        <label for="import-text-feld">Text einfügen</label>
+        <textarea id="import-text-feld" rows="6" placeholder="Hier den exportierten Text einfügen"></textarea>
+      </div>
+      <button type="button" class="btn btn-warnung" id="import-text-button">Text importieren (ersetzt laufende Ausgaben)</button>
+
+      <p class="erfolg-text" id="import-erfolg"></p>
+      <p class="fehler-text" id="import-fehler"></p>
     </section>
   </div>
 

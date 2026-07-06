@@ -2,6 +2,15 @@
 <html lang="de">
 <head>
   <meta charset="UTF-8">
+  <script>
+    // Verhindert ein kurzes Aufblitzen des Hellmodus beim Laden/Seitenwechsel
+    // im Dunkelmodus: liest den gespeicherten Modus synchron VOR dem ersten
+    // Rendern aus und setzt die Klasse direkt am <html>-Element (das schon
+    // existiert, während <body> hier noch nicht geparst ist).
+    if (localStorage.getItem("budgetrechnerModus") === "dunkel") {
+      document.documentElement.classList.add("dunkel-modus");
+    }
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Sonstige Ausgaben – Budgetrechner</title>
   <link rel="stylesheet" href="style.css">
@@ -30,6 +39,28 @@
       <a class="nav-link" href="sonstige.html">Sonstige</a>
     </nav>
 
+    <!-- ================= ÜBERSICHTSTABELLE ================= -->
+    <!-- Zeigt alle sonstigen Ausgaben mit Zwischensumme. Wird von script.js
+         (rendereUebersichtstabelle) automatisch befüllt; bleibt leer, solange
+         keine sonstigen Ausgaben angelegt sind. -->
+    <section class="karte uebersicht-karte" data-tabelle-modus="sonstige">
+      <h2>Übersicht: Sonstige Ausgaben</h2>
+
+      <button type="button" class="btn kategorie-umschalten" aria-expanded="false" data-label-zu="Tabelle anzeigen" data-label-offen="Tabelle einklappen">
+        <span class="umschalten-text">Tabelle anzeigen</span>
+        <span class="umschalten-pfeil" aria-hidden="true">▾</span>
+      </button>
+
+      <div class="kategorie-details">
+      <div class="tabelle-wrapper">
+        <table class="uebersicht-tabelle">
+          <tbody class="uebersicht-tabelle-body"></tbody>
+        </table>
+      </div>
+      <p class="leer-hinweis">Noch keine sonstigen Ausgaben vorhanden.</p>
+      </div>
+    </section>
+
     <!-- ================= SONSTIGE-AUSGABEN-KARTE ================= -->
     <!-- Freie, eigene Ausgaben ohne feste Kategorie. script.js erkennt diese
          Karte über "ausgaben-karte" + data-ziel="sonstige" genau wie die
@@ -40,6 +71,20 @@
         <p class="kategorie-zwischensumme">Zwischensumme: <span class="zwischensumme-betrag">0,00 €</span></p>
       </div>
 
+      <!-- Horizontales Balkendiagramm dieser Kategorie, größte Ausgabe oben.
+           Wird von script.js (rendereKategorieBalken) befüllt und bei leerer
+           Kategorie automatisch ausgeblendet. -->
+      <div class="kategorie-balken"></div>
+
+      <!-- Ein-/Ausklapp-Button: Formular und Liste sind standardmäßig
+           eingeklappt, damit die Kachel kompakt bleibt. script.js schaltet
+           dazu die Klasse "offen" am darunterliegenden Bereich um. -->
+      <button type="button" class="btn kategorie-umschalten" aria-expanded="false" data-label-zu="Ausgaben bearbeiten" data-label-offen="Ausgaben einklappen">
+        <span class="umschalten-text">Ausgaben bearbeiten</span>
+        <span class="umschalten-pfeil" aria-hidden="true">▾</span>
+      </button>
+
+      <div class="kategorie-details">
       <form class="ausgabe-formular" novalidate>
         <div class="feld-gruppe">
           <label for="sonstige-name-input">Name</label>
@@ -56,6 +101,7 @@
 
       <ul class="ausgaben-liste"></ul>
       <p class="leer-hinweis">Noch keine sonstigen Ausgaben angelegt.</p>
+      </div>
     </section>
   </div>
 
