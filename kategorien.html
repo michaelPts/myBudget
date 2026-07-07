@@ -43,12 +43,29 @@
       <a class="nav-link" href="sonstige.html">Sonstige</a>
     </nav>
 
+    <!-- Nur beim Drucken/PDF-Export sichtbarer Kopfbereich (siehe @media print
+         in style.css): Überschrift + aktuelles Datum. script.js
+         (initialisierePdfExport) trägt das Datum automatisch ein. -->
+    <div class="druck-kopf">
+      <h1 class="druck-titel">Laufende Ausgaben</h1>
+      <p class="druck-datum" id="druck-datum"></p>
+    </div>
+
     <!-- ================= ÜBERSICHTSTABELLE ================= -->
     <!-- Zeigt alle laufenden Ausgaben gruppiert nach Kategorie mit Zwischensumme.
          Wird von script.js (rendereUebersichtstabelle) automatisch befüllt;
          Kategorien ohne Ausgaben tauchen hier nicht auf. -->
     <section class="karte uebersicht-karte" data-tabelle-modus="kategorien">
       <h2>Übersicht: Laufende Ausgaben</h2>
+
+      <!-- Löst per window.print() den Druckdialog des Browsers aus; dort kann
+           "Als PDF sichern" gewählt werden. Das Druck-Stylesheet (@media
+           print) blendet alles außer dieser Tabelle aus. Bewusst außerhalb
+           von ".kategorie-details" platziert, damit man die Tabelle nicht
+           erst aufklappen muss, um sie zu exportieren. -->
+      <button type="button" class="btn btn-primary btn-pdf-export" id="pdf-export-button">
+        📄 Laufende Ausgaben als .pdf exportieren
+      </button>
 
       <button type="button" class="btn kategorie-umschalten" aria-expanded="false" data-label-zu="Tabelle anzeigen" data-label-offen="Tabelle einklappen">
         <span class="umschalten-text">Tabelle anzeigen</span>

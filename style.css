@@ -216,6 +216,34 @@ h2 {
 }
 
 /* ===================================================
+   SPARQUOTE-KARTE (Startseite)
+   =================================================== */
+.sparquote-karte {
+  text-align: center;
+}
+
+.sparquote-wert {
+  margin: 0;
+  font-size: 2.2rem;
+  font-weight: 700;
+  color: var(--farbe-text);
+}
+
+.sparquote-karte.positiv .sparquote-wert {
+  color: var(--farbe-positiv);
+}
+
+.sparquote-karte.negativ .sparquote-wert {
+  color: var(--farbe-negativ);
+}
+
+.sparquote-hinweis {
+  margin: 6px 0 0;
+  font-size: 0.85rem;
+  color: var(--farbe-text-hell);
+}
+
+/* ===================================================
    FORMULARE / EINGABEFELDER
    =================================================== */
 .feld-gruppe {
@@ -521,6 +549,24 @@ input[type="file"] {
   border-top: 2px solid var(--farbe-rand);
 }
 
+.uebersicht-gesamt-zeile th {
+  border-top: 2px solid var(--farbe-text);
+  font-weight: 700;
+}
+
+/* ===================================================
+   PDF-EXPORT-BUTTON (kategorien.html)
+   =================================================== */
+.btn-pdf-export {
+  margin-bottom: 16px;
+}
+
+/* Nur beim Drucken sichtbarer Kopfbereich (Überschrift + Datum), siehe
+   @media print weiter unten. */
+.druck-kopf {
+  display: none;
+}
+
 /* ===================================================
    AUSGABEN GESAMT (Startseite, über dem Balkendiagramm)
    =================================================== */
@@ -715,5 +761,113 @@ input[type="file"] {
 
   .karte {
     padding: 32px;
+  }
+}
+
+/* ===================================================
+   DRUCK-/PDF-ANSICHT (kategorien.html – "Laufende Ausgaben als .pdf
+   exportieren"). Blendet alles bis auf die Übersichtstabelle aus und
+   gestaltet sie als schlichtes, gut lesbares Dokument für A4. Greift nur
+   beim tatsächlichen Drucken (window.print()), die normale Ansicht im
+   Browser bleibt davon unberührt.
+   =================================================== */
+@media print {
+  @page {
+    size: A4;
+    margin: 2cm;
+  }
+
+  body {
+    background: #ffffff;
+    color: #000000;
+    padding: 0;
+  }
+
+  .container {
+    max-width: 100%;
+    margin: 0;
+  }
+
+  /* Alles ausblenden, was für einen Ausdruck der laufenden Ausgaben
+     irrelevant ist: Kopfzeile, Navigation, Saldo/Sparquote/Diagramm,
+     Eingabefelder samt Kategorie-Karten, Export/Import sowie sämtliche
+     Buttons (inkl. des PDF-Export-Buttons selbst). */
+  .kopfzeile,
+  .nav-leiste,
+  .saldo-karte,
+  .sparquote-karte,
+  .diagramm-karte,
+  .ausgaben-karte,
+  #export-import-karte,
+  .btn {
+    display: none !important;
+  }
+
+  /* Nur für den Druck gedachter Kopfbereich wird sichtbar. */
+  .druck-kopf {
+    display: block;
+    margin-bottom: 20px;
+  }
+
+  .druck-titel {
+    margin: 0 0 4px;
+    font-size: 1.6rem;
+    color: #000000;
+  }
+
+  .druck-datum {
+    margin: 0;
+    font-size: 0.95rem;
+    color: #000000;
+  }
+
+  /* Die Übersichtskarte flach und randlos wie ein Dokumentabschnitt statt
+     wie eine Karte darstellen; die eigentliche Überschrift der Karte wird
+     durch ".druck-titel" oben ersetzt. */
+  .uebersicht-karte {
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .uebersicht-karte h2 {
+    display: none;
+  }
+
+  /* Tabelle beim Drucken immer anzeigen, unabhängig vom Auf-/Zugeklappt-
+     Zustand auf dem Bildschirm. */
+  .kategorie-details {
+    display: block !important;
+    margin-top: 0;
+  }
+
+  .leer-hinweis {
+    color: #000000;
+  }
+
+  .uebersicht-tabelle {
+    font-size: 11pt;
+  }
+
+  .uebersicht-tabelle th,
+  .uebersicht-tabelle td {
+    color: #000000;
+    border-bottom: 1px solid #000000;
+    padding: 6px 4px;
+  }
+
+  .uebersicht-gruppen-zeile th {
+    background: #eeeeee;
+    border-top: 1px solid #000000;
+  }
+
+  .uebersicht-gruppen-zeile,
+  .uebersicht-gesamt-zeile {
+    break-inside: avoid;
+  }
+
+  .uebersicht-gesamt-zeile th {
+    border-top: 2px solid #000000;
   }
 }

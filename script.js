@@ -286,6 +286,63 @@ function rendereSaldo() {
   animiereZahlAuf(saldoAnzeige, vonWert, saldo, formatiereEuro, (aktuellerWert) => {
     saldoAngezeigterWert = aktuellerWert;
   });
+
+  // Die Sparquote hängt an denselben Werten (Einkommen, Ausgaben) und ändert
+  // sich bei genau denselben Ereignissen wie der Saldo – daher wird sie hier
+  // direkt mit aktualisiert, statt an jeder Aufrufstelle von rendereSaldo()
+  // einen zweiten Funktionsaufruf zu ergänzen.
+  rendereSparquote(summeAusgaben);
+}
+
+/* =========================================================================
+   SPARQUOTE (Startseite)
+   Sparquote = (Einkommen − Ausgaben gesamt) / Einkommen × 100. Bei Einkommen
+   0 ist die Quote nicht definiert (Division durch 0) – dann wird "–"
+   angezeigt statt eines Fehlers oder eines irreführenden Werts.
+   ========================================================================= */
+
+// Merkt sich den zuletzt angezeigten Sparquote-Wert für die weiche
+// Hochzähl-Animation, analog zu "saldoAngezeigterWert".
+let sparquoteAngezeigterWert;
+
+// Formatiert eine Zahl als deutsche Prozentangabe mit einer Nachkommastelle,
+// z. B. 56.34 -> "56,3 %".
+function formatiereProzent(zahl) {
+  return `${zahl.toFixed(1).replace(".", ",")} %`;
+}
+
+function rendereSparquote(summeAusgaben) {
+  const sparquoteAnzeige = document.getElementById("sparquote-anzeige");
+  const sparquoteKarte = document.getElementById("sparquote-karte");
+
+  if (!sparquoteAnzeige || !sparquoteKarte) {
+    return;
+  }
+
+  if (daten.einkommen === 0) {
+    sparquoteKarte.classList.remove("positiv", "negativ");
+    sparquoteAnzeige.textContent = "–";
+    sparquoteAngezeigterWert = undefined;
+    return;
+  }
+
+  const sparquote = ((daten.einkommen - summeAusgaben) / daten.einkommen) * 100;
+
+  // Die Farbe richtet sich nach dem Zielwert, damit sie während der
+  // Animation nicht beim Durchlaufen der 0 hin- und herwechselt.
+  if (sparquote >= 0) {
+    sparquoteKarte.classList.add("positiv");
+    sparquoteKarte.classList.remove("negativ");
+  } else {
+    sparquoteKarte.classList.add("negativ");
+    sparquoteKarte.classList.remove("positiv");
+  }
+
+  const vonWert = sparquoteAngezeigterWert === undefined ? 0 : sparquoteAngezeigterWert;
+
+  animiereZahlAuf(sparquoteAnzeige, vonWert, sparquote, formatiereProzent, (aktuellerWert) => {
+    sparquoteAngezeigterWert = aktuellerWert;
+  });
 }
 
 /* =========================================================================
@@ -657,6 +714,21 @@ function rendereUebersichtstabelle() {
       body.appendChild(zeile);
     });
   });
+
+  // Gesamtsumme über alle Kategorien hinweg (nur bei den laufenden Ausgaben,
+  // nicht bei "Sonstige") – wird sowohl in der normalen Tabellenansicht als
+  // auch im PDF-Export unten angezeigt.
+  if (mitJahresspalte) {
+    const gesamtMonat = sichtbareGruppen.reduce((summe, gruppe) => summe + summeListe(gruppe.liste), 0);
+    const gesamtZeile = document.createElement("tr");
+    gesamtZeile.className = "uebersicht-gesamt-zeile";
+    gesamtZeile.innerHTML = `
+      <th scope="col">Gesamt</th>
+      <th scope="col" class="spalte-zahl">${formatiereEuro(gesamtMonat)}</th>
+      <th scope="col" class="spalte-zahl">${formatiereEuro(gesamtMonat * 12)}</th>
+    `;
+    body.appendChild(gesamtZeile);
+  }
 }
 
 /* =========================================================================
@@ -865,6 +937,57 @@ function initialisiereExportImport() {
 
   importTextButton.addEventListener("click", () => {
     fuehreImportAus(importTextFeld.value);
+  });
+}
+
+/* =========================================================================
+   PDF-EXPORT DER LAUFENDEN AUSGABEN (kategorien.html)
+   Kein PDF-Erzeugen im Code nötig: der Button ruft nur window.print() auf,
+   und das @media-print-Stylesheet in style.css blendet alles bis auf die
+   Übersichtstabelle aus. Im Druckdialog des Browsers kann der Nutzer dann
+   "Als PDF sichern" wählen. Hier wird nur das Druck-Datum eingetragen und
+   der Button verdrahtet – tut nichts, falls die Seite (z. B. sonstige.html)
+   diesen Button gar nicht hat.
+   ========================================================================= */
+
+function initialisierePdfExport() {
+  const exportButton = document.getElementById("pdf-export-button");
+  const datumAnzeige = document.getElementById("druck-datum");
+
+  if (!exportButton) {
+    return;
+  }
+
+  if (datumAnzeige) {
+    const heute = new Intl.DateTimeFormat("de-DE", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    }).format(new Date());
+    datumAnzeige.textContent = `Stand: ${heute}`;
+  }
+
+  exportButton.addEventListener("click", () => {
+    window.print();
+  });
+}
+
+/* =========================================================================
+   VOLLBILD-MODUS AUF iOS (STANDALONE / "Zum Home-Bildschirm")
+   Öffnet man die App vom iOS-Home-Bildschirm aus, läuft sie ohne Safari-
+   Oberfläche ("standalone"). Klickt man dort auf einen internen Link (z. B.
+   in der Navigation), springt iOS bei einem normalen Linkklick manchmal in
+   die reguläre Safari-App und verlässt damit den Vollbildmodus. Der Trick:
+   den Klick abfangen und stattdessen per location.href navigieren – das
+   hält die Navigation zuverlässig innerhalb der Standalone-App.
+   ========================================================================= */
+if (("standalone" in window.navigator) && window.navigator.standalone) {
+  document.addEventListener("click", function (e) {
+    var a = e.target.closest("a");
+    if (a && a.href && a.host === location.host) {
+      e.preventDefault();
+      location.href = a.href;
+    }
   });
 }
 
@@ -1169,6 +1292,7 @@ function initialisiere() {
   initialisiereAusgabenKarten();
   initialisiereAusklappBereiche();
   initialisiereExportImport();
+  initialisierePdfExport();
   rendereSaldo();
   rendereDiagramm(true);
   rendereUebersichtstabelle();
