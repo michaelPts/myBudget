@@ -11,9 +11,13 @@
       document.documentElement.classList.add("dunkel-modus");
     }
   </script>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <title>Budgetrechner</title>
   <link rel="stylesheet" href="style.css">
+  <link rel="apple-touch-icon" href="icon-180.png">
 </head>
 <body>
 
@@ -63,8 +67,9 @@
     </section>
 
     <!-- ================= DIAGRAMM-KARTE ================= -->
-    <!-- Balkendiagramm ohne externe Bibliothek: ein Balken pro Kategorie mit
-         Ausgaben (plus "Sonstige"), größter Betrag links, kleinster rechts -->
+    <!-- Tortendiagramm ohne externe Bibliothek (SVG): ein Kreissegment pro
+         Kategorie mit Ausgaben (plus "Sonstige") plus Legende, größter
+         Anteil zuerst. Baut sich nur beim ersten Laden der Seite animiert auf. -->
     <section class="karte diagramm-karte">
       <h2>Ausgabenübersicht</h2>
       <p class="ausgaben-gesamt">Ausgaben gesamt: <span id="ausgaben-gesamt-betrag">0,00 €</span></p>

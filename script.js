@@ -195,12 +195,71 @@ function alleAusgaben() {
 }
 
 /* =========================================================================
+   ZAHLEN-HOCHZÄHL-ANIMATION (wiederverwendbar, z. B. für den Saldo)
+   Zählt einen angezeigten Wert per requestAnimationFrame weich abbremsend
+   (ease-out) von einem Start- zu einem Zielwert. Läuft bereits eine
+   Animation auf demselben Element, wird sie zuerst abgebrochen, damit sich
+   schnelle Änderungen (z. B. beim Tippen) nicht überlagern.
+   ========================================================================= */
+
+const ZAHL_ANIMATION_DAUER_MS = 800;
+
+// Merkt sich pro Element die laufende Animation (requestAnimationFrame-ID),
+// um sie bei einer neuen Änderung sauber abbrechen zu können.
+const laufendeZahlAnimationen = new WeakMap();
+
+// ease-out cubic: startet schnell, bremst weich zum Zielwert hin ab.
+function easeOutKubisch(t) {
+  return 1 - Math.pow(1 - t, 3);
+}
+
+// Zählt den Inhalt von "element" von "vonWert" zu "bisWert" hoch/runter.
+// "formatFn" wandelt den jeweils aktuellen Zwischenwert in den Anzeigetext
+// um (z. B. formatiereEuro). "beiFrame" ist optional und wird bei jedem
+// Frame mit dem aktuellen Zwischenwert aufgerufen (z. B. um sich den zuletzt
+// angezeigten Wert für die nächste Animation zu merken).
+function animiereZahlAuf(element, vonWert, bisWert, formatFn, beiFrame) {
+  const laufendeId = laufendeZahlAnimationen.get(element);
+  if (laufendeId !== undefined) {
+    cancelAnimationFrame(laufendeId);
+  }
+
+  const startZeit = performance.now();
+
+  function frame(jetzt) {
+    const verlauf = Math.min((jetzt - startZeit) / ZAHL_ANIMATION_DAUER_MS, 1);
+    const aktuellerWert = vonWert + (bisWert - vonWert) * easeOutKubisch(verlauf);
+
+    element.textContent = formatFn(aktuellerWert);
+    if (beiFrame) {
+      beiFrame(aktuellerWert);
+    }
+
+    if (verlauf < 1) {
+      const id = requestAnimationFrame(frame);
+      laufendeZahlAnimationen.set(element, id);
+    } else {
+      laufendeZahlAnimationen.delete(element);
+    }
+  }
+
+  const id = requestAnimationFrame(frame);
+  laufendeZahlAnimationen.set(element, id);
+}
+
+/* =========================================================================
    SALDO (Startseite)
    ========================================================================= */
 
+// Merkt sich den zuletzt angezeigten (nicht zwingend fertig animierten)
+// Saldo-Wert, damit eine neue Änderung weich von dort aus weiterzählt statt
+// wieder bei 0 zu beginnen. "undefined" bedeutet: noch nie gerendert (Start).
+let saldoAngezeigterWert;
+
 // Berechnet den Saldo (Einkommen minus ALLE Ausgaben) und zeigt ihn groß +
-// farbig in der Saldo-Karte an. Tut nichts, falls die Karte auf der aktuellen
-// Seite nicht existiert.
+// farbig in der Saldo-Karte an, wobei der angezeigte Wert weich zum neuen
+// Saldo hochzählt. Tut nichts, falls die Karte auf der aktuellen Seite nicht
+// existiert.
 function rendereSaldo() {
   const saldoAnzeige = document.getElementById("saldo-anzeige");
   const saldoKarte = document.getElementById("saldo-karte");
@@ -212,8 +271,8 @@ function rendereSaldo() {
   const summeAusgaben = summeListe(alleAusgaben());
   const saldo = daten.einkommen - summeAusgaben;
 
-  saldoAnzeige.textContent = formatiereEuro(saldo);
-
+  // Die Farbe richtet sich nach dem Zielwert, damit sie während der
+  // Animation nicht beim Durchlaufen der 0 hin- und herwechselt.
   if (saldo >= 0) {
     saldoKarte.classList.add("positiv");
     saldoKarte.classList.remove("negativ");
@@ -221,6 +280,12 @@ function rendereSaldo() {
     saldoKarte.classList.add("negativ");
     saldoKarte.classList.remove("positiv");
   }
+
+  const vonWert = saldoAngezeigterWert === undefined ? 0 : saldoAngezeigterWert;
+
+  animiereZahlAuf(saldoAnzeige, vonWert, saldo, formatiereEuro, (aktuellerWert) => {
+    saldoAngezeigterWert = aktuellerWert;
+  });
 }
 
 /* =========================================================================
@@ -264,12 +329,56 @@ if (einkommenInput) {
 }
 
 /* =========================================================================
-   BALKENDIAGRAMM (Startseite)
-   Reines HTML/CSS: pro sichtbarer Kategorie eine Spalte mit einem Balken,
-   dessen Höhe proportional zum größten Betrag ist.
+   TORTENDIAGRAMM (Startseite)
+   Reines SVG ohne externe Bibliothek: ein Kreissegment pro Kategorie mit
+   Ausgaben (plus "Sonstige"), Größe = Anteil an den Gesamtausgaben. Die Farbe
+   ist an die Kategorie-Identität gekoppelt (feste Reihenfolge = KATEGORIEN +
+   "Sonstige"), nicht an ihre Größe/Position in der (nach Betrag sortierten)
+   Anzeige. Beim ersten Laden der Seite fahren die Segmente einmalig
+   nacheinander im Kreis auf (siehe animiereTorteAuf); bei allen späteren
+   Aktualisierungen (Ausgabe hinzugefügt/geändert/gelöscht) wird nur noch
+   der Endzustand direkt gezeichnet.
    ========================================================================= */
 
-function rendereDiagramm() {
+const TORTE_RADIUS = 90;
+const TORTE_MITTE = 100;
+const TORTE_GESAMTDAUER_MS = 900;
+
+// Merkt sich die laufende Aufbau-Animation, um sie bei einem erneuten
+// Rendern (z. B. sehr schnell hintereinander) sauber abbrechen zu können.
+let torteAnimationId = null;
+
+// Liefert Punkt auf dem Torten-Kreis für einen Winkel in Grad (0° = oben,
+// im Uhrzeigersinn), Radius r um den Mittelpunkt.
+function tortePunkt(winkelGrad, r) {
+  const winkelRad = ((winkelGrad - 90) * Math.PI) / 180;
+  return {
+    x: TORTE_MITTE + r * Math.cos(winkelRad),
+    y: TORTE_MITTE + r * Math.sin(winkelRad),
+  };
+}
+
+// Baut den SVG-Pfad ("d"-Attribut) eines Kreissegments von startGrad bis
+// endGrad. Deckt das Segment (fast) die volle 360° ab, wird stattdessen ein
+// Vollkreis gezeichnet (ein einzelnes A-Segment kann keine 360° darstellen).
+function torteSegmentPfad(startGrad, endGrad) {
+  if (endGrad - startGrad >= 359.99) {
+    return `M ${TORTE_MITTE} ${TORTE_MITTE - TORTE_RADIUS}
+            A ${TORTE_RADIUS} ${TORTE_RADIUS} 0 1 1 ${TORTE_MITTE - 0.01} ${TORTE_MITTE - TORTE_RADIUS}
+            Z`;
+  }
+
+  const start = tortePunkt(startGrad, TORTE_RADIUS);
+  const ende = tortePunkt(endGrad, TORTE_RADIUS);
+  const grossBogen = endGrad - startGrad > 180 ? 1 : 0;
+
+  return `M ${TORTE_MITTE} ${TORTE_MITTE}
+          L ${start.x} ${start.y}
+          A ${TORTE_RADIUS} ${TORTE_RADIUS} 0 ${grossBogen} 1 ${ende.x} ${ende.y}
+          Z`;
+}
+
+function rendereDiagramm(animiert) {
   const flaeche = document.getElementById("diagramm-flaeche");
   const leerHinweis = document.getElementById("diagramm-leer-hinweis");
   const gesamtBetragEl = document.getElementById("ausgaben-gesamt-betrag");
@@ -278,24 +387,39 @@ function rendereDiagramm() {
     return;
   }
 
-  if (gesamtBetragEl) {
-    gesamtBetragEl.textContent = formatiereEuro(summeListe(alleAusgaben()));
+  if (torteAnimationId !== null) {
+    cancelAnimationFrame(torteAnimationId);
+    torteAnimationId = null;
   }
 
-  const balkenDaten = KATEGORIEN.map((kategorie) => ({
-    label: kategorie.label,
-    summe: summeListe(daten.kategorien[kategorie.key]),
-  }));
-  balkenDaten.push({ label: "Sonstige", summe: summeListe(daten.sonstige) });
+  const gesamtAusgaben = summeListe(alleAusgaben());
 
-  // Kategorien ohne Ausgaben ausblenden, Rest nach Betrag absteigend sortieren.
-  const sichtbareBalken = balkenDaten
-    .filter((balken) => balken.summe > 0)
-    .sort((a, b) => b.summe - a.summe);
+  if (gesamtBetragEl) {
+    gesamtBetragEl.textContent = formatiereEuro(gesamtAusgaben);
+  }
+
+  // Feste Farbzuordnung je Kategorie (Position in diesem Array = Farbindex),
+  // unabhängig von der späteren Sortierung nach Betrag.
+  const segmenteMitFarbe = KATEGORIEN.map((kategorie, index) => ({
+    label: kategorie.label,
+    betrag: summeListe(daten.kategorien[kategorie.key]),
+    farbe: `var(--torte-farbe-${index + 1})`,
+  }));
+  segmenteMitFarbe.push({
+    label: "Sonstige",
+    betrag: summeListe(daten.sonstige),
+    farbe: `var(--torte-farbe-${KATEGORIEN.length + 1})`,
+  });
+
+  // Kategorien ohne Ausgaben ausblenden; Rest nach Betrag absteigend sortiert
+  // (bestimmt Reihenfolge in Torte UND Legende).
+  const sichtbareSegmente = segmenteMitFarbe
+    .filter((segment) => segment.betrag > 0)
+    .sort((a, b) => b.betrag - a.betrag);
 
   flaeche.innerHTML = "";
 
-  if (sichtbareBalken.length === 0) {
+  if (sichtbareSegmente.length === 0 || gesamtAusgaben <= 0) {
     if (leerHinweis) {
       leerHinweis.style.display = "block";
     }
@@ -306,22 +430,113 @@ function rendereDiagramm() {
     leerHinweis.style.display = "none";
   }
 
-  const maxWert = Math.max(...sichtbareBalken.map((balken) => balken.summe));
-
-  sichtbareBalken.forEach((balken) => {
-    const hoeheProzent = (balken.summe / maxWert) * 100;
-
-    const spalte = document.createElement("div");
-    spalte.className = "balken-spalte";
-    spalte.innerHTML = `
-      <span class="balken-wert">${formatiereEuro(balken.summe)}</span>
-      <div class="balken-huelle">
-        <div class="balken" style="height: ${hoeheProzent}%"></div>
-      </div>
-      <span class="balken-label">${escapeHtml(balken.label)}</span>
-    `;
-    flaeche.appendChild(spalte);
+  // Start-/Endwinkel je Segment (kumulativ, 0° = oben, im Uhrzeigersinn) vorab
+  // berechnen – sowohl für die Legende (Prozentwerte) als auch fürs Zeichnen.
+  let laufenderWinkel = 0;
+  const segmenteMitWinkel = sichtbareSegmente.map((segment) => {
+    const anteil = segment.betrag / gesamtAusgaben;
+    const startGrad = laufenderWinkel;
+    const endGrad = laufenderWinkel + anteil * 360;
+    laufenderWinkel = endGrad;
+    return { ...segment, anteil, startGrad, endGrad };
   });
+
+  const svgNs = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(svgNs, "svg");
+  svg.setAttribute("viewBox", "0 0 200 200");
+  svg.setAttribute("class", "torte-svg");
+  svg.setAttribute("role", "img");
+  svg.setAttribute(
+    "aria-label",
+    "Tortendiagramm der monatlichen Ausgaben: " +
+      segmenteMitWinkel
+        .map((s) => `${s.label} ${formatiereEuro(s.betrag)}`)
+        .join(", ")
+  );
+
+  const pfadElemente = segmenteMitWinkel.map((segment) => {
+    const pfad = document.createElementNS(svgNs, "path");
+    pfad.setAttribute("class", "torte-segment");
+    pfad.setAttribute("fill", segment.farbe);
+    svg.appendChild(pfad);
+    return pfad;
+  });
+
+  flaeche.appendChild(svg);
+
+  const legende = document.createElement("ul");
+  legende.className = "torte-legende";
+  segmenteMitWinkel.forEach((segment) => {
+    const eintrag = document.createElement("li");
+    eintrag.className = "torte-legende-eintrag";
+    eintrag.innerHTML = `
+      <span class="torte-punkt" style="background: ${segment.farbe}"></span>
+      <span class="torte-name">${escapeHtml(segment.label)}</span>
+      <span class="torte-betrag">${formatiereEuro(segment.betrag)}</span>
+      <span class="torte-prozent">${(segment.anteil * 100).toFixed(1).replace(".", ",")} %</span>
+    `;
+    legende.appendChild(eintrag);
+  });
+  flaeche.appendChild(legende);
+
+  if (animiert) {
+    animiereTorteAuf(pfadElemente, segmenteMitWinkel);
+  } else {
+    pfadElemente.forEach((pfad, index) => {
+      const segment = segmenteMitWinkel[index];
+      pfad.setAttribute("d", torteSegmentPfad(segment.startGrad, segment.endGrad));
+    });
+  }
+}
+
+// Lässt die Segmente einmalig nacheinander im Kreis "auffahren": jedes
+// Segment wächst von seinem Startwinkel bis zu seinem vollen Endwinkel,
+// bevor das nächste Segment startet. Die Gesamtdauer wird proportional zur
+// Größe der Segmente verteilt (größere Segmente animieren etwas länger).
+function animiereTorteAuf(pfadElemente, segmenteMitWinkel) {
+  // Noch nicht an der Reihe befindliche Segmente vorab unsichtbar (Länge 0)
+  // an ihrer Startposition zeichnen, damit nichts "vorzeitig" aufblitzt.
+  pfadElemente.forEach((pfad, index) => {
+    const segment = segmenteMitWinkel[index];
+    pfad.setAttribute("d", torteSegmentPfad(segment.startGrad, segment.startGrad));
+  });
+
+  const MIN_DAUER_MS = 60;
+  let segmentIndex = 0;
+
+  function animiereSegment() {
+    if (segmentIndex >= segmenteMitWinkel.length) {
+      torteAnimationId = null;
+      return;
+    }
+
+    const segment = segmenteMitWinkel[segmentIndex];
+    const pfad = pfadElemente[segmentIndex];
+    const segmentDauer = Math.max(
+      MIN_DAUER_MS,
+      TORTE_GESAMTDAUER_MS * (segment.anteil || 0)
+    );
+    const startZeit = performance.now();
+
+    function frame(jetzt) {
+      const verlauf = Math.min((jetzt - startZeit) / segmentDauer, 1);
+      const aktuellesEnde =
+        segment.startGrad + (segment.endGrad - segment.startGrad) * easeOutKubisch(verlauf);
+
+      pfad.setAttribute("d", torteSegmentPfad(segment.startGrad, aktuellesEnde));
+
+      if (verlauf < 1) {
+        torteAnimationId = requestAnimationFrame(frame);
+      } else {
+        segmentIndex += 1;
+        animiereSegment();
+      }
+    }
+
+    torteAnimationId = requestAnimationFrame(frame);
+  }
+
+  animiereSegment();
 }
 
 /* =========================================================================
@@ -407,21 +622,38 @@ function rendereUebersichtstabelle() {
     leerHinweis.style.display = "none";
   }
 
+  // Die Jahreswerte-Spalte (Monatsbetrag × 12) gibt es nur in der Übersicht
+  // der laufenden Ausgaben (kategorien.html), nicht bei "Sonstige".
+  const mitJahresspalte = modus !== "sonstige";
+
   sichtbareGruppen.forEach((gruppe) => {
+    const summeMonat = summeListe(gruppe.liste);
     const kopfZeile = document.createElement("tr");
     kopfZeile.className = "uebersicht-gruppen-zeile";
-    kopfZeile.innerHTML = `
-      <th scope="col">${escapeHtml(gruppe.label)}</th>
-      <th scope="col">${formatiereEuro(summeListe(gruppe.liste))}</th>
-    `;
+    kopfZeile.innerHTML = mitJahresspalte
+      ? `
+        <th scope="col">${escapeHtml(gruppe.label)}</th>
+        <th scope="col" class="spalte-zahl">${formatiereEuro(summeMonat)}</th>
+        <th scope="col" class="spalte-zahl">${formatiereEuro(summeMonat * 12)}</th>
+      `
+      : `
+        <th scope="col">${escapeHtml(gruppe.label)}</th>
+        <th scope="col" class="spalte-zahl">${formatiereEuro(summeMonat)}</th>
+      `;
     body.appendChild(kopfZeile);
 
     gruppe.liste.forEach((ausgabe) => {
       const zeile = document.createElement("tr");
-      zeile.innerHTML = `
-        <td>${escapeHtml(ausgabe.name)}</td>
-        <td>${formatiereEuro(ausgabe.betrag)}</td>
-      `;
+      zeile.innerHTML = mitJahresspalte
+        ? `
+          <td>${escapeHtml(ausgabe.name)}</td>
+          <td class="spalte-zahl">${formatiereEuro(ausgabe.betrag)}</td>
+          <td class="spalte-zahl">${formatiereEuro(ausgabe.betrag * 12)}</td>
+        `
+        : `
+          <td>${escapeHtml(ausgabe.name)}</td>
+          <td class="spalte-zahl">${formatiereEuro(ausgabe.betrag)}</td>
+        `;
       body.appendChild(zeile);
     });
   });
@@ -938,7 +1170,7 @@ function initialisiere() {
   initialisiereAusklappBereiche();
   initialisiereExportImport();
   rendereSaldo();
-  rendereDiagramm();
+  rendereDiagramm(true);
   rendereUebersichtstabelle();
 }
 

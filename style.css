@@ -19,6 +19,18 @@
   --farbe-neutral-bg: #f3f4f6;
   --schatten-farbe: rgba(0, 0, 0, 0.06);
   --radius: 16px;
+
+  /* Feste kategoriale Farbpalette fürs Tortendiagramm, in derselben
+     Reihenfolge wie KATEGORIEN in script.js (+ "Sonstige" als 8. Farbe).
+     Farbe hängt an der Kategorie, nicht an ihrer Größe/Position. */
+  --torte-farbe-1: #4d7ea8;
+  --torte-farbe-2: #3f9678;
+  --torte-farbe-3: #c9922f;
+  --torte-farbe-4: #5a8a52;
+  --torte-farbe-5: #6b5b95;
+  --torte-farbe-6: #b85c5c;
+  --torte-farbe-7: #c17a94;
+  --torte-farbe-8: #c17847;
 }
 
 /* Dunkelmodus: überschreibt einfach dieselben Variablen mit anderen Werten.
@@ -42,6 +54,15 @@ html.dunkel-modus {
   --farbe-eingabe-bg-fokus: #111827;
   --farbe-neutral-bg: #334155;
   --schatten-farbe: rgba(0, 0, 0, 0.4);
+
+  --torte-farbe-1: #5f97c9;
+  --torte-farbe-2: #4aab8a;
+  --torte-farbe-3: #d1a151;
+  --torte-farbe-4: #6a9a63;
+  --torte-farbe-5: #8577ad;
+  --torte-farbe-6: #c97272;
+  --torte-farbe-7: #cf8ea6;
+  --torte-farbe-8: #cf8a5c;
 }
 
 * {
@@ -50,7 +71,12 @@ html.dunkel-modus {
 
 body {
   margin: 0;
-  padding: 24px 16px 60px;
+  /* Zusätzlich zu den festen Werten die Safe-Area-Insets (Notch/Statusleiste,
+     Home-Indicator) addieren – wichtig im Vollbildmodus (siehe apple-mobile-
+     web-app-status-bar-style "black-translucent" im <head>), damit Kopfzeile
+     und unterster Inhalt nicht verdeckt werden. Auf Geräten ohne Notch ist
+     env(...) einfach 0, ändert also nichts am bisherigen Aussehen. */
+  padding: calc(24px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(60px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
   font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   background: var(--farbe-hintergrund);
   color: var(--farbe-text);
@@ -475,8 +501,11 @@ input[type="file"] {
   border-bottom: 1px solid var(--farbe-rand);
 }
 
-.uebersicht-tabelle td:last-child,
-.uebersicht-tabelle th:last-child {
+/* Zahlen-Spalten (Monat, ggf. Jahr) rechtsbündig – per Klasse statt :last-child,
+   damit dieselbe Regel für die 2-spaltige (sonstige.html) UND die 3-spaltige
+   (kategorien.html) Tabelle funktioniert. */
+.uebersicht-tabelle td.spalte-zahl,
+.uebersicht-tabelle th.spalte-zahl {
   text-align: right;
   white-space: nowrap;
   font-weight: 600;
@@ -591,51 +620,85 @@ input[type="file"] {
 }
 
 /* ===================================================
-   BALKENDIAGRAMM (Startseite, ohne externe Bibliothek)
+   TORTENDIAGRAMM (Startseite, ohne externe Bibliothek)
    =================================================== */
 .diagramm-flaeche {
   display: flex;
-  align-items: flex-end;
-  gap: 16px;
-  overflow-x: auto;
-  padding-bottom: 4px;
-}
-
-.balken-spalte {
-  display: flex;
   flex-direction: column;
   align-items: center;
-  flex: 1 1 64px;
-  min-width: 64px;
+  gap: 20px;
 }
 
-.balken-huelle {
+.torte-svg {
+  width: 100%;
+  max-width: 220px;
+  height: auto;
+}
+
+.torte-segment {
+  stroke: var(--farbe-karte);
+  stroke-width: 2;
+}
+
+.torte-legende {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 100%;
   display: flex;
-  align-items: flex-end;
-  height: 180px;
-  width: 100%;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.balken {
-  width: 100%;
-  min-height: 4px;
-  background: var(--farbe-primary);
-  border-radius: 8px 8px 0 0;
-  transition: height 0.3s ease;
+.torte-legende-eintrag {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 0.85rem;
 }
 
-.balken-wert {
-  margin-bottom: 6px;
-  font-size: 0.75rem;
-  font-weight: 700;
+.torte-punkt {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  align-self: center;
+}
+
+.torte-name {
+  font-weight: 600;
+  flex: 1 1 auto;
+  min-width: 60px;
+  overflow-wrap: anywhere;
+}
+
+.torte-betrag {
+  font-weight: 600;
   white-space: nowrap;
 }
 
-.balken-label {
-  margin-top: 8px;
-  font-size: 0.8rem;
+.torte-prozent {
   color: var(--farbe-text-hell);
-  text-align: center;
+  white-space: nowrap;
+  min-width: 3.4em;
+  text-align: right;
+}
+
+/* Größere Bildschirme: Torte links, Legende rechts daneben */
+@media (min-width: 600px) {
+  .diagramm-flaeche {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .torte-svg {
+    flex: 0 0 auto;
+    width: 200px;
+  }
+
+  .torte-legende {
+    flex: 1 1 auto;
+  }
 }
 
 /* ===================================================
@@ -643,7 +706,7 @@ input[type="file"] {
    =================================================== */
 @media (min-width: 600px) {
   body {
-    padding: 40px 16px 60px;
+    padding: calc(40px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(60px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left));
   }
 
   .saldo-betrag {
